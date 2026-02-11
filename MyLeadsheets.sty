@@ -1,0 +1,570 @@
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{MyLeadsheets}
+
+\ExplSyntaxOn
+    \UseName{prop_new:c}{l__leadsheets_songs_height_prop}
+\ExplSyntaxOff
+
+\RequirePackage{etoolbox}
+\RequirePackage{xparse}
+
+%2023-04-18 By default, LyricsWithChords will be generated as Songsheet:
+\newtoggle{LyricsWithChords} 
+\toggletrue{LyricsWithChords}
+
+\newtoggle{LyricsNoChords} 
+\togglefalse{LyricsNoChords}
+
+\newtoggle{ChordProgression} 
+\togglefalse{ChordProgression}
+
+\newtoggle{ChordsAndLyrics} 
+\togglefalse{ChordsAndLyrics}
+
+\newtoggle{SmallLyrics} 
+\togglefalse{SmallLyrics} 
+
+%2023-04-18 smalllyrics option will be obsolete but keeping in for compatibility:
+\DeclareOption{smalllyrics}{
+\toggletrue{SmallLyrics}
+}
+
+\newtoggle{Structure} 
+\togglefalse{Structure}
+
+% This option will print only the structure info
+\ifdefined\Structure
+\changefontsizes{24pt}
+\toggletrue{Structure}
+\togglefalse{ChordsAndLyrics}
+\togglefalse{ChordProgression}
+\togglefalse{LyricsNoChords}
+\togglefalse{LyricsWithChords}
+\togglefalse{SmallLyrics}
+\fi
+% This option will print the chord progression with small lyrics:
+\ifdefined\ChordsAndLyrics
+\toggletrue{ChordsAndLyrics}
+\toggletrue{ChordProgression}
+\toggletrue{LyricsNoChords}
+\togglefalse{LyricsWithChords}
+\toggletrue{SmallLyrics}
+\fi
+% This option will print only the chord progression:
+\ifdefined\ChordsOnly
+\toggletrue{ChordProgression}
+%\togglefalse{LyricsNoChords}
+\togglefalse{LyricsWithChords}
+%\togglefalse{SmallLyrics}
+\fi
+% This option will print only the lyrics:
+\ifdefined\LyricsOnly
+\toggletrue{LyricsNoChords}
+%\togglefalse{ChordProgression}
+\togglefalse{LyricsWithChords}
+%\togglefalse{SmallLyrics}
+\fi
+
+\ProcessOptions\relax
+
+% For printing:
+\ifdefined\BlackAndWhite
+\PassOptionsToPackage{table,dvipsnames,monochrome}{xcolor}
+\else
+\PassOptionsToPackage{table,dvipsnames}{xcolor}
+\fi
+
+% For phone displays:
+\ifdefined\Longpaper
+\RequirePackage[paperwidth=8.5in,paperheight=17in,left=0.5cm,top=0.5cm,bottom=0.5cm,right=0.5cm]{geometry}
+\changefontsizes{20pt}
+\else
+%\RequirePackage[left=0.5cm,top=0.5cm,bottom=0.5cm,right=0.5cm]{geometry}
+\RequirePackage[left=0.5cm,top=0.5cm,bottom=0.5cm,right=0.5cm,letterpaper]{geometry}
+\fi
+
+
+%\RequirePackage[left=3cm,top=1.8cm,bottom=1.5cm,right=2cm]{geometry}
+\RequirePackage{array}
+\RequirePackage{amssymb}
+\RequirePackage{graphicx}
+\RequirePackage{parskip}
+\RequirePackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=Black,
+    }
+\RequirePackage{soul}
+\setul{1.5pt}{1.5pt} %sets underline parameters
+
+\RequirePackage{guitarchordschemes}
+\setchordscheme{
+string-name-format={\sffamily\scriptsize},
+x-unit=.4cm,
+y-unit=.4cm,
+name-distance=0em,
+name-below=true,
+position-format={\footnotesize},
+finger-format={\sffamily\scriptsize},
+name-format={\footnotesize},
+line-width={.5pt},
+chord-name-cs={\writechord},
+tuning = {,,,,,}
+}
+
+\RequirePackage{tcolorbox}
+\ifdefined\BlackAndWhite
+\tcbuselibrary{skins}
+\newtcolorbox{introbox}{left=0pt,right=0pt,boxrule=0.3mm,arc=0mm,colback=white}
+\newtcolorbox{outrobox}{left=0pt,right=0pt,boxrule=0.3mm,arc=0mm,colback=white}
+\newtcolorbox{versebox}{left=0pt,right=0pt,boxrule=0.1mm,arc=0mm,colback=white}
+\newtcolorbox{chorusbox}{left=0pt,right=0pt,boxrule=0.6mm,arc=0mm,colback=white}
+%\newtcolorbox{chorusbox}{left=0pt,right=0pt,boxrule=0.3mm,arc=0mm,colback=gray!30}
+\newtcolorbox{liftbox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=white,borderline={2.0pt}{0pt}{dotted}}
+%\newtcolorbox{liftbox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=gray!10,borderline={1.0pt}{0pt}{dotted}}
+\newtcolorbox{prechorusbox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=white,borderline={1.0pt}{0pt}{dotted}}
+%\newtcolorbox{prechorusbox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=gray!10,borderline={1.0pt}{0pt}{dotted}}
+\newtcolorbox{postchorusbox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=white,borderline={1.0pt}{0pt}{dotted}}
+%\newtcolorbox{postchorusbox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=gray!10,borderline={1.0pt}{0pt}{dotted}}
+\newtcolorbox{solobox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=white,borderline={1.0pt}{0pt}{dashed}}
+%\newtcolorbox{solobox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=gray!50,borderline={1.0pt}{0pt}{dashed}}
+%\newtcolorbox{bridgebox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=white,borderline={2.0pt}{0pt}{dotted}}
+\newtcolorbox{bridgebox}{left=0pt,right=0pt,boxrule=1.2mm,arc=0mm,colback=white}
+%\newtcolorbox{interludebox}{left=0pt,right=0pt,boxrule=1.1mm,arc=0mm,colback=white}
+\newtcolorbox{interludebox}{enhanced,left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=white,borderline={2.0pt}{0pt}{dashed}}
+\else
+\newtcolorbox{introbox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=Dandelion!10}
+\newtcolorbox{outrobox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=Dandelion!10}
+\newtcolorbox{versebox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=Gray!6}
+\newtcolorbox{chorusbox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=Green!9}
+\newtcolorbox{liftbox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=Green!5}
+\newtcolorbox{prechorusbox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=Green!5}
+\newtcolorbox{postchorusbox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=Green!5}
+\newtcolorbox{solobox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=RoyalPurple!14}
+\newtcolorbox{bridgebox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=RoyalBlue!14}
+\newtcolorbox{interludebox}{left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=Dandelion!15}
+\fi
+
+\RequirePackage{tikz}
+\newcommand{\repeatbar}{%
+  \begin{tikzpicture}[baseline=0ex]
+  \draw (0,0) ;  
+  \filldraw[BrickRed] (0.2,0.3) circle (1.5pt) ;
+  \draw[line width=2,BrickRed] (0.2,-0.05) -- (0.6,0.38) ;  
+  \filldraw[BrickRed] (0.6,0.04) circle (1.5pt) ;
+  \end{tikzpicture}
+  }
+\newcommand{\mydot}{%
+  \begin{tikzpicture}
+  \draw (0,0) ;  
+  \filldraw[BrickRed] (0,0.12) circle (0.9pt) ;
+  \end{tikzpicture}
+  }
+\newcommand{\mysmalldot}{%
+  \begin{tikzpicture}
+  \draw (0,0) ;  
+  \filldraw[BrickRed] (0,0.12) circle (0.5pt) ;
+  \end{tikzpicture}
+  }
+\newcommand{\ssp}{%
+  \hspace{2pt}
+}
+\newcommand{\lsp}{%
+  \hspace{5pt}
+}
+
+\newcommand\linktotoc{%
+  \vfill \mbox{}\hfill \hyperref[TOC]{(top)}
+}%
+
+\newcommand\lyriclinebreak{%
+ \iftoggle{LyricsNoChords}{
+   \\[1ex] 
+ }{}
+}%
+
+\makeatletter
+\newcommand\chords[1]{%
+\iftoggle{ChordProgression}{
+#1
+}{
+\@gobble{#1}\ignorespaces
+}
+}
+
+\newcommand\lyrics[1]{%
+ \iftoggle{LyricsNoChords}{
+  \iftoggle{SmallLyrics}{
+   %\footnotesize #1
+   %\scriptsize #1
+   \small #1
+  }{
+   #1
+  }
+ }{
+  \@gobble{#1}\ignorespaces
+ }
+}
+
+\newcommand\lyricswithchords[1]{%
+\iftoggle{LyricsWithChords}{
+#1
+}{
+\@gobble{#1}\ignorespaces
+}
+}
+
+\newcommand\structure[1]{%
+\iftoggle{Structure}{
+#1
+}{
+\@gobble{#1}\ignorespaces
+}
+}
+
+\makeatother
+
+\newcommand\notebox[1]{%
+  {%
+    \raisebox{0.1em}{\fcolorbox{RoyalBlue}{White}{%
+      \bfseries\ttfamily\scshape \textcolor{RoyalBlue}{#1}%
+    }%
+  }%
+  }%
+}
+
+\newcommand\note[1]{%
+  {\bfseries\ttfamily \textcolor{RoyalBlue}{[#1]}}
+}
+
+%>>>>>>>>>>>>>>>>>>>>>>>
+% Create larger bar symbols for Chords, ChordsWithLyrics formats:
+%>>>>>>>>>>>>>>>>>>>>>>>
+\iftoggle{LyricsWithChords}{
+\def\normalbarwidth{.09em}
+}{
+\def\normalbarwidth{.15em}
+}
+%<<<<<<<<<<<<<<<<<<<<<<<
+
+%>>>>>>>>>>>>>>>>>>>>>>>
+%Special symbols for difficulty ratings and transpositions:
+%>>>>>>>>>>>>>>>>>>>>>>>
+\newcommand\easy{\raisebox{-0.1em}{\resizebox{0.9em}{!}{\textcolor{ForestGreen}{$\bullet$}}}}
+\newcommand\moderate{\resizebox{0.9em}{!}{\textcolor{RoyalBlue}{$\blacktriangle$}}}
+\newcommand\difficult{\raisebox{0.16em}{\resizebox{0.9em}{0.65em}{$\blacklozenge$}}}
+\newcommand\transdown{\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Downarrow$}}}
+\newcommand\transup{\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Uparrow$}}}
+%\newcommand\piano{\raisebox{-0.1em}{\resizebox{0.8em}{!}{\emoji{musical-keyboard}}}}
+%<<<<<<<<<<<<<<<<<<<<<<<
+
+\RequirePackage{titlesec}
+\titleformat{\section}[block]
+{}{}{0em}{\large\bfseries\sffamily}{}
+
+\RequirePackage{titletoc}
+
+\ifdefined\Longpaper
+\titlecontents{section}[1em]
+{}
+{\bfseries\Large \enspace }
+{\normalfont\enspace}
+{}[\medskip]
+\else
+\titlecontents{section}[1em]
+{}
+{\bfseries\normalfont \enspace }
+{\normalfont\enspace}
+{}[\medskip] 
+\fi
+
+%\RequirePackage[roman=libertine,sans=lato]{MyFonts}
+\RequirePackage[sb,lining]{libertine} %Options: sb for semibold for roman, no effect on sans (very subtle, is it even working?), oldstyle (Note: will also affect math), lining (default), proportional, tabular (default) for figures, along with commands \oldstylenums{}, \oldstylenumsf{},\liningnums{}, \liningnumsf{}, scale (for biolinum), llscale (for libertine), ttscale (for mono)
+\RequirePackage[defaultsans]{lato} 
+\RequirePackage[varqu,varl]{zi4}% inconsolata; teletype font; has bold style; no italic shape
+\RequirePackage[T1]{fontenc}
+
+\setlength{\fboxsep}{3pt}
+
+\definesongtitletemplate{mytitle}{
+\ifsongmeasuring
+{\section*}
+{\section}{%
+\ifsongproperty{version}{\mbox{}\quad}{}%
+\ifsongproperty{difficulty}{\texorpdfstring{\songproperty{difficulty}\space}{}}{}%
+\texorpdfstring{\large\sffamily\songproperty{title}\space\normalsize}{}%
+\mdseries%
+\ifsongproperty{band}{(\songproperty{band})\space}{}%
+\ifsongproperty{tempo}{\songproperty{tempo}\space}{}%
+\bfseries%
+\ifsongproperty{key}{\textcolor{BrickRed}{\songproperty{key}}\space\space}{}%
+\mdseries%
+\ifsongproperty{istransposed}{\texorpdfstring{\textcolor{BrickRed}{(\songproperty{istransposed})}\space\space}{}}{}%
+\ifsongproperty{capo}{\notebox{capo:\songproperty{capo}}}{}%
+\space%
+\ifsongproperty{tuning}{\small\songproperty{tuning}\space\normalsize}{}%
+%\ifsongproperty{version}{\texorpdfstring{\textcolor{Purple}{\songproperty{version}}}{}}{}%
+\ifsongproperty{version}{\texorpdfstring{\hfill\textcolor{Purple}{\songproperty{version}}}{}}{}%
+%\ifsongproperty{newversion}{\texorpdfstring{\notebox{\songproperty{newversion}}}{}}{}%
+\ifsongproperty{genre}{\texorpdfstring{\hfill\textcolor{ForestGreen}{\songproperty{genre}}}{}}{}%
+}
+%\ifsongproperty{meter}{\songproperty{meter}\space}{}%
+%\ifsongproperty{note}{\quad \textcolor{RoyalBlue}{\bfseries\ttfamily NOTE: \songproperty{note}}\quad}{}%
+  %\par\bigskip
+}
+
+
+\definesongtitletemplate{mytabular}{
+\ifsongmeasuring
+{\section*}
+{\section}{%
+\texorpdfstring{\sffamily\songproperty{title}}{}%
+%\songproperty{title}%
+%\texorpdfstring{\enspace\normalsize\itshape(\songproperty{band})}{}%
+\texorpdfstring{\enspace\normalsize\sffamily(\songproperty{band})}{}%
+}
+\begingroup\footnotesize
+\begin{tabular}{
+ @{}
+>{\raggedright\arraybackslash}p{.5\linewidth}
+ @{}
+ >{\raggedleft\arraybackslash}p{.5\linewidth}
+ @{}
+ }
+%\ifsongproperty{band}
+%{\normalsize\sffamily\colorbox{gray!15}{\printsongpropertylist{band}{ \& }{, }{ \& }}}
+%{}%
+ \ifsongproperty{capo}
+ {& \bfseries\large \capo \\}
+ {}%
+ \ifsongproperty{key}
+ {%
+ & \setchords{
+ major = -\GetTranslation{leadsheets/major} ,
+ minor = -\GetTranslation{leadsheets/minor}
+ }%
+ \ifsongproperty{capo}{
+ %\GetTranslation{leadsheets/key}: %
+ Key (relative to capo): \expandcode{\writechord{\songproperty{key}}} \\%
+ }
+ {
+ Key: \expandcode{\writechord{\songproperty{key}}} \\%
+ }
+ }
+ {}%
+ \ifsongproperty{origkey}
+ {& Original key: \songproperty{origkey} \\}
+ {}%
+ \ifsongproperty{firstnote}
+ {& First sung note: \songproperty{firstnote} \\}
+ {}%
+ \ifsongproperty{composer}
+ {& Writer: %
+ \printsongpropertylist{composer}{ \& }{, }{ \& }\\
+ {}%
+ }
+ {}%
+ \ifsongproperty{tempo}
+ {& Tempo: \songproperty{tempo} \\}
+ {}%
+ \ifsongproperty{tuning}
+ {& Tuning: \songproperty{tuning} \\}
+ {}%
+ \end{tabular}
+ \par\endgroup
+ }
+
+\newversetype{lift}{}
+\setleadsheets{
+%lift/label-format = \bfseries ,
+lift/name=lift,
+}
+\newversetype{mysolo}{}
+\setleadsheets{
+mysolo/label-format = \bfseries ,
+mysolo/name=solo,
+}
+\newversetype{mypart}{}
+\setleadsheets{
+mypart/label-format = \bfseries ,
+mypart/name=part,
+%mypart/after-label = ~$\Rightarrow$
+}
+\newversetype{postchorus}{}
+\setleadsheets{
+%postchorus/label-format = \bfseries ,
+postchorus/name=post,
+}
+
+\iftoggle{LyricsWithChords}{
+\setleadsheets{
+chords/format = {\bfseries\sffamily\normalsize\color{BrickRed}},
+verses-format = \bfseries,
+verses-label-format = \scshape ,
+info/format = \itshape\bfseries ,
+chorus/format = \itshape\bfseries,
+}
+}{}
+
+\iftoggle{LyricsNoChords}{
+\setleadsheets{
+print-chords=false,
+%chords/format = {\sffamily\normalsize\color{BrickRed}},
+verses-format = ,
+verses-label-format = ,
+info/format = \itshape ,
+chorus/format = \itshape,
+}
+}{}
+
+\iftoggle{ChordProgression}{
+\setleadsheets{
+chords/format = {\sffamily\normalsize\bfseries\color{BrickRed}},
+verses-format = ,
+verses-label-format = ,
+info/format = \itshape ,
+chorus/format = \itshape,
+}
+}{}
+
+\iftoggle{ChordsAndLyrics}{
+\setleadsheets{
+  chords/format = {\sffamily\normalsize\bfseries\color{BrickRed}},
+verses-format = ,
+verses-label-format = ,
+info/format = \itshape ,
+chorus/format = \itshape,
+}
+}{}
+
+\iftoggle{Structure}{
+\setleadsheets{
+  chords/format = {\sffamily\normalsize\bfseries\color{BrickRed}},
+verses-format = \bfseries,
+verses-label-format = \scshape,
+info/format = \itshape\bfseries ,
+chorus/format = \itshape\bfseries,
+}
+}{}
+
+\setleadsheets{
+empty-chord-dim = {2cm},
+capo-nr-format=arabic ,
+title-template=mytitle ,
+%title-template=mytabular ,
+bar-shortcuts =true,
+verse/numbered =false,
+verse/named =true,
+verse/after-label=,
+lift/after-label=:,
+prechorus/after-label=:,
+postchorus/after-label=:,
+mypart/after-label=:,
+interlude/after-label=:,
+chorus/after-label=:,
+%prechorus/template =itemize,
+align-chords=l,
+transpose-capo=false,
+%smash-chords=true,
+%verses-label-format = \bfseries ,
+verse/name = V,
+chorus/name = C,
+lift/name = L,
+prechorus/name = Pr,
+postchorus/name = Po,
+solo/name = S ,
+intro/name = In ,
+outro/name = Out ,
+interlude/name = I/L ,
+bridge/name = Br ,
+}
+
+%\definesongproperty{genre}
+\definesongproperty{tuning}
+\definesongproperty{difficulty}
+\definesongproperty{version}
+%\definesongproperty{newversion}
+\definesongproperty{istransposed}
+\definesongproperty{meter}
+\definesongproperty{year}
+
+%>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+%2023-11-08 OBSOLETE?
+%>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+\definesongproperty{high}
+\definesongproperty{origkey}
+\definesongproperty{firstnote}
+\definesongproperty{note}
+%<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+\thispagestyle{empty}
+\renewcommand\contentsname{Table of Contents}
+\contentsmargin{1em}
+
+\endinput
+
+%OLDER STUFF (obsolete?)
+%2023-04-18 DELETE:
+%\newcommand\cul[1]{%
+%\iftoggle{LyricsWithChords}{
+    %#1%
+  %}{%
+    %\ul{#1}%
+  %}%
+%}
+
+%2023-04-18 DELETE:
+\newcommand\bl{%
+ \iftoggle{LyricsWithChords}{
+    |
+  }{}%
+}
+
+\definesongtitletemplate{myoldtitle}{
+\ifsongmeasuring
+{\section*}
+{\section}{%
+\texorpdfstring{\sffamily\songproperty{title}}{}%
+\mdseries\enspace%
+\ifsongproperty{band}{(\songproperty{band})}{}%
+ }
+\small\mdseries\sffamily\enspace%
+ \ifsongproperty{key}
+ {%
+ \setchords{
+ major = -\GetTranslation{leadsheets/major} ,
+ minor = -\GetTranslation{leadsheets/minor}
+ }%
+ %\ifsongproperty{capo}{
+ %%\GetTranslation{leadsheets/key}: %
+ %\expandcode{\writechord{\songproperty{key}}} (rel. to capo)\quad %
+ %}%
+  {
+   Key: \expandcode{\writechord{\songproperty{key}}}\space %
+  }%
+ }%
+{}%
+\ifsongproperty{origkey}{(Orig:\space\songproperty{origkey})\space}{}%
+\ifsongproperty{capo}{Capo \songproperty{capo}.\space}{}%
+\ifsongproperty{meter}{\songproperty{meter}.\space}{}%
+\ifsongproperty{tempo}{\songproperty{tempo}.\space}{}%
+\ifsongproperty{tuning}{\songproperty{tuning}.\space}{}%
+\ifsongproperty{note}{\quad \textcolor{RoyalBlue}{\bfseries\ttfamily NOTE: \songproperty{note}}\quad}{}%
+  \par\medskip
+}
+
+\RequirePackage{ifthen}
+\def\printcamp{0}
+\def\printfaves{0}
+\newcommand\MySongLink[9]{%
+  \def\camptag{#8}%
+  \def\favetag{#9}%
+  %\ifthenelse{\tagone=1}{#3}{}
+  \ifthenelse{\printcamp=1\AND\camptag=1}{%
+    \hyperref[#1]{\texorpdfstring{#2 \, \Large #3 (#4) \textcolor{BrickRed}{#5} {\small #6} \hfill\textcolor{ForestGreen}{#7}}{#3}} \\[1ex]
+    }{\ifthenelse{\printfaves=1\AND\favetag=1}{%
+    \hyperref[#1]{\texorpdfstring{#2 \, \Large #3 (#4) \textcolor{BrickRed}{#5} {\small #6} \hfill\textcolor{ForestGreen}{#7}}{#3}} \\[1ex]
+  }{}}
+}
+
+

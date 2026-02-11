@@ -1,0 +1,135 @@
+\ProvidesPackage{MyLeadsheets}
+
+\RequirePackage[dvipsnames]{xcolor}
+\def\normalbarwidth{.1em}
+%\RequirePackage[left=3cm,top=1.8cm,bottom=1.5cm,right=2cm]{geometry}
+\RequirePackage{array}
+\RequirePackage{guitarchordschemes}
+\RequirePackage{parskip}
+\setchordscheme{
+string-name-format={\sffamily\scriptsize},
+x-unit=.4cm,
+y-unit=.4cm,
+name-distance=0em,
+name-below=true,
+position-format={\footnotesize},
+finger-format={\sffamily\scriptsize},
+name-format={\footnotesize},
+line-width={.5pt},
+chord-name-cs={\writechord},
+tuning = {,,,,,}
+}
+
+\RequirePackage{titlesec}
+\titleformat{\section}[block]
+{}{}{0em}{\LARGE}{}
+\RequirePackage{titletoc}
+%\titlecontents{section}[1em]
+%{}
+%{\bfseries\normalfont \enspace }
+%{\normalfont\enspace}
+%{}[]
+\titlecontents{section}[0em]
+{}
+{}
+{}
+%{\bfseries\thecontentslabel. \normalfont \enspace }
+%{\normalfont\enspace}
+{ \titlerule*[0.8pc]{.} \scshape \thecontentspage}[]  
+
+\RequirePackage[roman=imfellEnglish,sans=overlock]{MyFonts}
+%\usepackage[roman=newtx,sans=helvet,tt,math]{MyFonts}
+%see MyFonts.sty for details. 
+%Roman options: newtx (default), libertine, lmodern, garamond, venturis, fouriernc, fourier, antpolt, charter, accanthis, crimson, imfellEnglish, baskervald, Baskervaldx, bookman
+%Sans options: helvet, overlock, cantarell, cabin, cabincondensed, arev, lato
+%tt options: cmtt, zi4 (default)
+\RequirePackage[initial=elzevier]{MyFontsFancy}
+
+\setlength{\fboxsep}{3pt}
+\definesongtitletemplate{mytabular}{
+\ifsongmeasuring
+{\section*}
+{\section}{%
+%\sffamily\songproperty{title}%
+\songproperty{title}%
+%\ifsongproperty{band}
+%{\\[1ex]\normalsize\sffamily\printsongpropertylist{band}{ \& }{, }{ \& }}
+%{}%
+}
+\begingroup\footnotesize
+\begin{tabular}{
+ @{}
+>{\raggedright\arraybackslash}p{.5\linewidth}
+ @{}
+ >{\raggedleft\arraybackslash}p{.5\linewidth}
+ @{}
+ }
+\ifsongproperty{band}
+{\normalsize\scshape\colorbox{gray!15}{\printsongpropertylist{band}{ \& }{, }{ \& }}}
+{}%
+ \ifsongproperty{key}
+ {%
+ & \setchords{
+ major = -\GetTranslation{leadsheets/major} ,
+ minor = -\GetTranslation{leadsheets/minor}
+ }%
+ \GetTranslation{leadsheets/key}: %
+ \expandcode{\writechord{\songproperty{key}}} \\%
+ }
+ {}%
+ \ifsongproperty{composer}
+ {& %Written by: %
+ \printsongpropertylist{composer}{ \& }{, }{ \& }\\
+ {}%
+ }
+ {}%
+ \ifsongproperty{tuning}
+ {& Tuning: \songproperty{tuning} \\}
+ {}%
+ \end{tabular}
+ \par\endgroup
+ }
+
+\setleadsheets{
+capo-nr-format=arabic ,
+title-template=mytabular ,
+%title-template = leadsheet ,
+bar-shortcuts =true,
+verse/numbered =true,
+chords/format = {\normalfont\small},
+empty-chord-dim = {2cm},
+verses-format = \medskip,
+align-chords=l,
+%smash-chords=true,
+%verses-label-format = \bfseries ,
+verses-label-format = \scshape ,
+info/format = \itshape ,
+chorus/format = \itshape\large
+%chorus/format = \fontsize{50}{60}\selectfont 
+}
+\definesongproperty{tuning}
+\definesongproperty{year}
+
+\thispagestyle{empty}
+\renewcommand\contentsname{Table of Contents}
+\contentsmargin{1em}
+
+\usepackage{pgfornament}
+\usepackage{background}
+\backgroundsetup%
+{   contents={
+  \begin{tikzpicture}[remember picture, overlay]
+    \node[anchor=north,shift={(0cm,-5mm)}] at (current page.north){%
+    \resizebox{0.5\linewidth}{1.8ex}{\pgfornament[symmetry=h]{87}}};
+    \node[anchor=south,shift={(0cm,5mm)}] at (current page.south){%
+    \resizebox{0.5\linewidth}{1.8ex}{\pgfornament[symmetry=h]{87}}};
+  \end{tikzpicture}%
+    },
+    scale=1,
+    opacity=1,
+    color=black,
+    angle=0
+}
+%\pagestyle{empty}
+\RequirePackage[colorlinks=true,urlcolor=Blue,linkcolor=Black!20!OliveGreen]{hyperref}
+\endinput

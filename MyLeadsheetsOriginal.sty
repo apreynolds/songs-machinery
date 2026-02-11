@@ -1,0 +1,125 @@
+\ProvidesPackage{MyLeadsheets}
+\PassOptionsToPackage{dvipsnames}{xcolor}
+\RequirePackage{array}
+\RequirePackage{guitarchordschemes}
+\RequirePackage{parskip}
+\RequirePackage{hyperref}
+\setchordscheme{
+string-name-format={\sffamily\scriptsize},
+x-unit=.4cm,
+y-unit=.4cm,
+name-distance=0em,
+name-below=true,
+position-format={\footnotesize},
+finger-format={\sffamily\scriptsize},
+name-format={\footnotesize},
+line-width={.5pt},
+chord-name-cs={\writechord},
+tuning = {,,,,,}
+}
+
+\newcommand\note[1]{{\bfseries\ttfamily (#1)}}
+\def\normalbarwidth{.2em}
+
+\RequirePackage{titlesec}
+\titleformat{\section}[block]
+{}{}{0em}{\large\bfseries\sffamily}{}
+
+\RequirePackage{titletoc}
+\titlecontents{section}[1em]
+{}
+{\bfseries\normalfont \enspace }
+{\normalfont\enspace}
+{}[]
+
+%\RequirePackage[roman=libertine,sans=lato]{MyFonts}
+\usepackage[sb,lining]{libertine} %Options: sb for semibold for roman, no effect on sans (very subtle, is it even working?), oldstyle (Note: will also affect math), lining (default), proportional, tabular (default) for figures, along with commands \oldstylenums{}, \oldstylenumsf{},\liningnums{}, \liningnumsf{}, scale (for biolinum), llscale (for libertine), ttscale (for mono)
+\usepackage[T1]{fontenc}
+%\usepackage[roman=newtx,sans=helvet,tt,math]{MyFonts}
+%see MyFonts.sty for details. 
+%Roman options: newtx (default), libertine, lmodern, garamond, venturis, fouriernc, fourier, antpolt, charter, accanthis, crimson, imfellEnglish, baskervald, Baskervaldx, bookman
+%Sans options: helvet, overlock, cantarell, cabin, cabincondensed, arev, lato
+%tt options: cmtt, zi4 (default)
+
+\setlength{\fboxsep}{3pt}
+
+\definesongtitletemplate{mytitle}{
+\ifsongmeasuring
+{\section*}
+{\section}{%
+\texorpdfstring{\sffamily\songproperty{title}}{}%
+\small\mdseries\sffamily\enspace%
+ \ifsongproperty{key}
+ {%
+ \setchords{
+ major = -\GetTranslation{leadsheets/major} ,
+ minor = -\GetTranslation{leadsheets/minor}
+ }%
+ %\ifsongproperty{capo}{
+ %%\GetTranslation{leadsheets/key}: %
+ %\expandcode{\writechord{\songproperty{key}}} (rel. to capo)\quad %
+ %}%
+ {
+ \expandcode{\writechord{\songproperty{key}}}\quad %
+ }%
+ }%
+{}%
+\ifsongproperty{meter}{\songproperty{meter}\quad}{}%
+\ifsongproperty{tempo}{tempo: \songproperty{tempo}\quad}{}%
+\ifsongproperty{tuning}{\songproperty{tuning}\quad}{}%
+\ifsongproperty{note}{\songproperty{note}\quad}{}%
+ }
+}
+
+\newversetype{mypart}{}
+\setleadsheets{
+mypart/label-format = \bfseries ,
+mypart/name=part,
+%mypart/after-label = ~$\Rightarrow$
+}
+\newversetype{postchorus}{}
+\setleadsheets{
+%postchorus/label-format = \bfseries ,
+postchorus/name=postCh,
+%mypart/after-label = ~$\Rightarrow$
+}
+
+%\DeclareTranslation{English}{leadsheets/fret}{}
+
+\setleadsheets{
+capo-nr-format=arabic ,
+capo-nr={#1},
+title-template=mytitle ,
+bar-shortcuts =true,
+%verse/numbered = false,
+chords/format = {\sffamily\small},
+empty-chord-dim = {2cm},
+%verses-format = {\Large},
+align-chords=l,
+transpose-capo=false,
+%transpose-capo=true,
+%smash-chords=true,
+%verses-label-format = \scshape ,
+info/format = \itshape ,
+chorus/format = \itshape ,
+chorus/name = Ch ,
+chorus/format = \itshape ,
+prechorus/name = preCh ,
+verse/name = Ve ,
+intro/name = In ,
+outro/name = Out ,
+interlude/name = Intrld ,
+bridge/name = Br ,
+}
+\definesongproperty{tuning}
+\definesongproperty{origkey}
+\definesongproperty{firstnote}
+\definesongproperty{year}
+\definesongproperty{meter}
+\definesongproperty{note}
+
+\thispagestyle{empty}
+\renewcommand\contentsname{Table of Contents}
+\contentsmargin{1em}
+
+\endinput
