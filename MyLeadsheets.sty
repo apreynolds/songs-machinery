@@ -223,7 +223,7 @@ tuning = {,,,,,}
 \newcommand\notebox[1]{%
   {%
     \raisebox{0.1em}{\fcolorbox{RoyalBlue}{White}{%
-      \bfseries\ttfamily\scshape \textcolor{RoyalBlue}{#1}%
+      \bfseries\ttfamily\upshape\textcolor{RoyalBlue}{#1}%
     }%
   }%
   }%
@@ -274,11 +274,10 @@ tuning = {,,,,,}
 {}[\medskip] 
 \fi
 
-%\RequirePackage[roman=libertine,sans=lato]{MyFonts}
-\RequirePackage[sb,lining]{libertine} %Options: sb for semibold for roman, no effect on sans (very subtle, is it even working?), oldstyle (Note: will also affect math), lining (default), proportional, tabular (default) for figures, along with commands \oldstylenums{}, \oldstylenumsf{},\liningnums{}, \liningnumsf{}, scale (for biolinum), llscale (for libertine), ttscale (for mono)
-\RequirePackage[defaultsans]{lato} 
-\RequirePackage[varqu,varl]{zi4}% inconsolata; teletype font; has bold style; no italic shape
 \RequirePackage[T1]{fontenc}
+\usepackage[semibold, lining, serif, tt=false ]{libertinus} 
+\RequirePackage[defaultsans]{lato} 
+\usepackage[scale=0.96]{newtxtt}
 
 \setlength{\fboxsep}{3pt}
 
@@ -396,7 +395,7 @@ postchorus/name=post,
 \setleadsheets{
 chords/format = {\bfseries\sffamily\normalsize\color{BrickRed}},
 verses-format = \bfseries,
-verses-label-format = \scshape ,
+verses-label-format = \upshape ,
 info/format = \itshape\bfseries ,
 chorus/format = \itshape\bfseries,
 }
@@ -437,7 +436,7 @@ chorus/format = \itshape,
 \setleadsheets{
   chords/format = {\sffamily\normalsize\bfseries\color{BrickRed}},
 verses-format = \bfseries,
-verses-label-format = \scshape,
+verses-label-format = \upshape,
 info/format = \itshape\bfseries ,
 chorus/format = \itshape\bfseries,
 }
