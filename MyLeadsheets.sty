@@ -84,7 +84,7 @@
 \RequirePackage{array}
 \RequirePackage{amssymb}
 \RequirePackage{graphicx}
-\RequirePackage{parskip}
+\KOMAoptions{parskip=full}
 \RequirePackage{hyperref}
 \hypersetup{
     colorlinks=true,
@@ -254,9 +254,9 @@ tuning = {,,,,,}
 %\newcommand\piano{\raisebox{-0.1em}{\resizebox{0.8em}{!}{\emoji{musical-keyboard}}}}
 %<<<<<<<<<<<<<<<<<<<<<<<
 
-\RequirePackage{titlesec}
-\titleformat{\section}[block]
-{}{}{0em}{\large\bfseries\sffamily}{}
+% KOMA-native section heading: suppress number display, set font
+\setkomafont{section}{\large\bfseries\sffamily}
+\renewcommand*{\sectionformat}{}
 
 \RequirePackage{titletoc}
 
