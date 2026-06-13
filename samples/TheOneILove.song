@@ -6,6 +6,13 @@
 
 \begin{song}[]{title={The One I Love}, band={REM}, tempo={127}, key = {Em}}
 
+  \begin{intro}
+    |: _{Em} \quad
+    | _{D} \quad
+    | _{Em} \quad
+    | _{Em} \quad :|
+  \end{intro}
+
   \begin{verse}
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
