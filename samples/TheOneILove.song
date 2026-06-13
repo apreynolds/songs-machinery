@@ -1,0 +1,106 @@
+\documentclass[fontsize=14pt,DIV=calc]{leadsheet}
+\usepackage{MyLeadsheets}
+
+\begin{document}
+\sffamily
+
+\begin{song}[]{title={The One I Love}, band={REM}, tempo={127}, key = {Em}}
+
+  \begin{verse}
+    | ^{Em}THIS ONE GOES OUT
+    | ^{D}TO THE ONE I
+    | ^{Em}LOVE
+    | ^{Em} \qquad | \\[1ex]
+    | THIS ONE GOES OUT
+    | TO THE ONE I'VE
+    | LEFT BEHIND
+    | \qquad | \\[1ex]
+    | ^{G}A SIMPLE
+    | ^{D}PROP TO
+    | ^{G}OCCUPY MY
+    | ^{C}TIME \quad | \\[1ex]
+    | ^{Em}THIS ONE GOES OUT
+    | ^{D}TO THE ONE I
+    | ^{Em}LOVE
+    | ^{Em} \qquad |
+  \end{verse}
+
+  \begin{chorus}
+    |: ^{Em}FIRE
+    | ^{D} \qquad
+    | ^{Em} \qquad
+    | ^{Em} \qquad :|
+  \end{chorus}
+
+  \begin{verse}
+    | ^{Em}THIS ONE GOES OUT
+    | ^{D}TO THE ONE I
+    | ^{Em}LOVE
+    | ^{Em} \qquad | \\[1ex]
+    | THIS ONE GOES OUT
+    | TO THE ONE I'VE
+    | LEFT BEHIND
+    | \qquad | \\[1ex]
+    | ^{G}A SIMPLE
+    | ^{D}PROP TO
+    | ^{G}OCCUPY MY
+    | ^{C}TIME \quad | \\[1ex]
+    | ^{Em}THIS ONE GOES OUT
+    | ^{D}TO THE ONE I
+    | ^{Em}LOVE
+    | ^{Em} \qquad |
+  \end{verse}
+
+  \begin{chorus}
+    |: ^{Em}FIRE
+    | ^{D} \qquad
+    | ^{Em} \qquad
+    | ^{Em} \qquad :|
+  \end{chorus}
+
+  \begin{solo}
+    | _{G} \quad
+    | _{D} \quad
+    | _{G} \quad
+    | _{C} \quad | \\[1ex]
+    | _{Em} \quad
+    | _{D} \quad
+    | _{Em} \quad
+    | _{Em} \quad |
+  \end{solo}
+
+  \begin{verse}
+    | ^{Em}THIS ONE GOES OUT
+    | ^{D}TO THE ONE I
+    | ^{Em}LOVE
+    | ^{Em} \qquad | \\[1ex]
+    | THIS ONE GOES OUT
+    | TO THE ONE I'VE
+    | LEFT BEHIND
+    | \qquad | \\[1ex]
+    | ^{G}ANOTHER
+    | ^{D}PROP HAS
+    | ^{G}OCCUPIED MY
+    | ^{C}TIME \quad | \\[1ex]
+    | ^{Em}THIS ONE GOES OUT
+    | ^{D}TO THE ONE I
+    | ^{Em}LOVE
+    | ^{Em} \qquad |
+  \end{verse}
+
+  \begin{chorus}
+    |: ^{Em}FIRE
+    | ^{D} \qquad
+    | ^{Em} \qquad
+    | ^{Em} \qquad :|
+  \end{chorus}
+
+  \begin{outro}
+    | _{Em} \qquad
+    | _{D} \quad _{D#} \quad
+    | _{Em} \qquad |||
+  \end{outro}
+
+\end{song}
+
+\end{document}
