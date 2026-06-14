@@ -142,6 +142,64 @@
 }
 
 % ---------------------------------------------------------------------------
+% Measures: minimum bar spacing
+% ---------------------------------------------------------------------------
+% leadsheets' bar "|" is just an inline rule; the span between two bars has no
+% width of its own, so sparse measures (a lone chord) collapse to nothing.
+% \measures typesets one music line as a list of measures, each set in a
+% left-aligned box of at least \minmeasure -- so barlines never sit closer than
+% that, while lyric-heavy measures keep their (larger) natural width.
+%
+%   \measures{ {m1}{m2}{m3} }       ->  normal bars   | m1 | m2 | m3 |
+%   \measures[repeat]{ {m1}{m2} }   ->  repeat bars   |: m1 | m2 :|
+%   \measures[final]{ {m1}{m2} }    ->  final bar     | m1 | m2 |||
+%
+% The .song stays clean -- one braced group per measure -- and the iteration
+% lives here.  expl3 is deliberate: \tl_map_inline:nn maps cleanly over brace
+% groups (each measure is one list item), which plain LaTeX does only awkwardly.
+% Bar styles go through \str_case so adding \doublebar etc. is a one-line edit.
+%
+% The literal space + \unskip inside the box is load-bearing: the chord splitter
+% (\__leadsheets_set_chord:nwn) scans forward to a space to find the lyric a
+% chord sits over, so a measure ending "^{Em}LOVE" needs a trailing space to
+% delimit; \unskip then drops it so it doesn't inflate the measured width.
+%
+% \measurepad is a small kern placed on *both* sides of the content, so glyphs
+% don't butt against the barlines (matches the reference's "| text |" breathing
+% room).  It's a macro, not a length, so its em is the song-body font at use
+% time; retune with \renewcommand.
+\newlength\minmeasure
+\setlength\minmeasure{2.0cm}
+\newcommand\measurepad{0.35em}
+\ExplSyntaxOn
+\box_new:N  \l__myls_measure_box
+\bool_new:N \l__myls_first_measure_bool
+\cs_new_protected:Npn \__myls_openbar:n  #1
+  { \str_case:nnF {#1} { {repeat} {\leftrepeat} } {\normalbar} }
+\cs_new_protected:Npn \__myls_closebar:n #1
+  { \str_case:nnF {#1} { {repeat} {\rightrepeat} {final} {\stopbar} } {\normalbar} }
+\cs_new_protected:Npn \__myls_measurebox:n #1
+  {
+    \hbox_set:Nn \l__myls_measure_box { \kern\measurepad #1 ~ \unskip \kern\measurepad }
+    \dim_compare:nNnTF { \box_wd:N \l__myls_measure_box } < \minmeasure
+      { \hbox_to_wd:nn \minmeasure { \box_use:N \l__myls_measure_box \hfil } }
+      { \box_use:N \l__myls_measure_box }
+  }
+\NewDocumentCommand \measures { O{} m }
+  {
+    \bool_set_true:N \l__myls_first_measure_bool
+    \tl_map_inline:nn {#2}
+      {
+        \bool_if:NTF \l__myls_first_measure_bool
+          { \__myls_openbar:n {#1} \bool_set_false:N \l__myls_first_measure_bool }
+          { \normalbar }
+        \__myls_measurebox:n {##1}
+      }
+    \__myls_closebar:n {#1}
+  }
+\ExplSyntaxOff
+
+% ---------------------------------------------------------------------------
 % Song title / header
 % ---------------------------------------------------------------------------
 % One-line header "Title (Band) Tempo Key" (key in brick-red), replacing the

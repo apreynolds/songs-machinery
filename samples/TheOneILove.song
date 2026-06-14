@@ -7,49 +7,49 @@
 \begin{song}[]{title={The One I Love}, band={REM}, tempo={127}, key = {Em}}
 
   \begin{intro}[template=introbox]
-    |: _{Em} \quad | _{D} \quad | _{Em} \quad | _{Em} \quad :|
+    \measures[repeat]{{_{Em}}{_{D}}{_{Em}}{_{Em}}}
   \end{intro}
 
   \begin{verse}[template=versebox]
-    | ^{Em}THIS ONE GOES OUT | ^{D}TO THE ONE I | ^{Em}LOVE | ^{Em} \qquad | \\
-    | THIS ONE GOES OUT | TO THE ONE I'VE | LEFT BEHIND | \qquad | \\
-    | ^{G} A SIMPLE | ^{D}PROP TO | ^{G}OCCUPY MY | ^{C}TIME \quad | \\
-    | ^{Em}THIS ONE GOES OUT | ^{D}TO THE ONE I | ^{Em}LOVE | ^{Em} \qquad |
+    \measures{{^{Em}THIS ONE GOES OUT}{^{D}TO THE ONE I}{^{Em}LOVE}{^{Em}}} \\
+    \measures{{THIS ONE GOES OUT}{TO THE ONE I'VE}{LEFT BEHIND}{}} \\
+    \measures{{^{G} A SIMPLE}{^{D}PROP TO}{^{G}OCCUPY MY}{^{C}TIME}} \\
+    \measures{{^{Em}THIS ONE GOES OUT}{^{D}TO THE ONE I}{^{Em}LOVE}{^{Em}}}
   \end{verse}
 
   \begin{chorus}[template=chorusbox]
-    |: ^{Em}FIRE | ^{D} \qquad | ^{Em} \qquad | ^{Em} \qquad :|
+    \measures[repeat]{{^{Em}FIRE}{^{D}}{^{Em}}{^{Em}}}
   \end{chorus}
 
   \begin{verse}[template=versebox]
-    | ^{Em}THIS ONE GOES OUT | ^{D}TO THE ONE I | ^{Em}LOVE | ^{Em} \qquad | \\
-    | THIS ONE GOES OUT | TO THE ONE I'VE | LEFT BEHIND | \qquad | \\
-    | ^{G} A SIMPLE | ^{D}PROP TO | ^{G}OCCUPY MY | ^{C}TIME \quad | \\
-    | ^{Em}THIS ONE GOES OUT | ^{D}TO THE ONE I | ^{Em}LOVE | ^{Em} \qquad |
+    \measures{{^{Em}THIS ONE GOES OUT}{^{D}TO THE ONE I}{^{Em}LOVE}{^{Em}}} \\
+    \measures{{THIS ONE GOES OUT}{TO THE ONE I'VE}{LEFT BEHIND}{}} \\
+    \measures{{^{G} A SIMPLE}{^{D}PROP TO}{^{G}OCCUPY MY}{^{C}TIME}} \\
+    \measures{{^{Em}THIS ONE GOES OUT}{^{D}TO THE ONE I}{^{Em}LOVE}{^{Em}}}
   \end{verse}
 
   \begin{chorus}[template=chorusbox]
-    |: ^{Em}FIRE | ^{D} \qquad | ^{Em} \qquad | ^{Em} \qquad :|
+    \measures[repeat]{{^{Em}FIRE}{^{D}}{^{Em}}{^{Em}}}
   \end{chorus}
 
   \begin{solo}[template=solobox]
-    | _{G} \quad | _{D} \quad | _{G} \quad | _{C} \quad | \\
-    | _{Em} \quad | _{D} \quad | _{Em} \quad | _{Em} \quad |
+    \measures{{_{G}}{_{D}}{_{G}}{_{C}}} \\
+    \measures{{_{Em}}{_{D}}{_{Em}}{_{Em}}}
   \end{solo}
 
   \begin{verse}[template=versebox]
-    | ^{Em}THIS ONE GOES OUT | ^{D}TO THE ONE I | ^{Em}LOVE | ^{Em} \qquad | \\
-    | THIS ONE GOES OUT | TO THE ONE I'VE | LEFT BEHIND | \qquad | \\
-    | ^{G} ANOTHER | ^{D}PROP HAS | ^{G}OCCUPIED MY | ^{C}TIME \quad | \\
-    | ^{Em}THIS ONE GOES OUT | ^{D}TO THE ONE I | ^{Em}LOVE | ^{Em} \qquad |
+    \measures{{^{Em}THIS ONE GOES OUT}{^{D}TO THE ONE I}{^{Em}LOVE}{^{Em}}} \\
+    \measures{{THIS ONE GOES OUT}{TO THE ONE I'VE}{LEFT BEHIND}{}} \\
+    \measures{{^{G} ANOTHER}{^{D}PROP HAS}{^{G}OCCUPIED MY}{^{C}TIME}} \\
+    \measures{{^{Em}THIS ONE GOES OUT}{^{D}TO THE ONE I}{^{Em}LOVE}{^{Em}}}
   \end{verse}
 
   \begin{chorus}[template=chorusbox]
-    |: ^{Em}FIRE | ^{D} \qquad | ^{Em} \qquad | ^{Em} \qquad :|
+    \measures[repeat]{{^{Em}FIRE}{^{D}}{^{Em}}{^{Em}}}
   \end{chorus}
 
   \begin{outro}[template=outrobox]
-    | _{Em} \qquad | _{D} \quad _{D#} \quad | _{Em} \qquad |||
+    \measures[final]{{_{Em}}{_{D} _{D#}}{_{Em}}}
   \end{outro}
 
 \end{song}
