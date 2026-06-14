@@ -149,7 +149,8 @@
 }
 \setleadsheets{ title-template = mytitle }
 
-% No running header.  The class (via scrlayer-scrpage) puts the song title in the
-% centre of the page header on pages 2+; clear all three header slots to remove
-% it.  The page-number footer (\cofoot in the class) is left untouched.
-\ihead{}\chead{}\ohead{}
+% No running header and no page numbers.  The class (via scrlayer-scrpage) puts
+% the song title in the page header (pages 2+) and a "page X of Y" line in the
+% footer; \clearpairofpagestyles wipes every head/foot slot of the scrheadings
+% pagestyle (and its plain variant) in one documented command.
+\clearpairofpagestyles
