@@ -17,15 +17,15 @@
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE
-    | ^{Em} \qquad | \\[1ex]
+    | ^{Em} \qquad | \\
     | THIS ONE GOES OUT
     | TO THE ONE I'VE
     | LEFT BEHIND
-    | \qquad | \\[1ex]
+    | \qquad | \\
     | ^{G} A SIMPLE
     | ^{D}PROP TO
     | ^{G}OCCUPY MY
-    | ^{C}TIME \quad | \\[1ex]
+    | ^{C}TIME \quad | \\
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE
@@ -43,15 +43,15 @@
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE
-    | ^{Em} \qquad | \\[1ex]
+    | ^{Em} \qquad | \\
     | THIS ONE GOES OUT
     | TO THE ONE I'VE
     | LEFT BEHIND
-    | \qquad | \\[1ex]
+    | \qquad | \\
     | ^{G} A SIMPLE
     | ^{D}PROP TO
     | ^{G}OCCUPY MY
-    | ^{C}TIME \quad | \\[1ex]
+    | ^{C}TIME \quad | \\
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE
@@ -69,7 +69,7 @@
     | _{G} \quad
     | _{D} \quad
     | _{G} \quad
-    | _{C} \quad | \\[1ex]
+    | _{C} \quad | \\
     | _{Em} \quad
     | _{D} \quad
     | _{Em} \quad
@@ -80,15 +80,15 @@
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE
-    | ^{Em} \qquad | \\[1ex]
+    | ^{Em} \qquad | \\
     | THIS ONE GOES OUT
     | TO THE ONE I'VE
     | LEFT BEHIND
-    | \qquad | \\[1ex]
+    | \qquad | \\
     | ^{G} ANOTHER
     | ^{D}PROP HAS
     | ^{G}OCCUPIED MY
-    | ^{C}TIME \quad | \\[1ex]
+    | ^{C}TIME \quad | \\
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE

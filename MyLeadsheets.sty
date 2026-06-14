@@ -92,16 +92,24 @@
 \renewcommand\theverse{V\arabic{verse}}
 \renewcommand\thechorus{C\arabic{chorus}}
 
+% Default extra line spacing inside song sections, so a bare "\\" gives a
+% comfortable gap -- no need for \\[1ex] on every line.  A bare \\ now spans
+% baselineskip + \mysonglinesep; \\[<len>] still adds <len> more on a specific
+% break.  Tune \mysonglinesep to change the default everywhere.
+\newlength\mysonglinesep
+\setlength\mysonglinesep{1ex}
+
 % Section body text in bold (matches the reference); labels are kept un-bold via
 % verses-label-format=\mdseries, overriding the class default of \bfseries
-% (leadsheet.cls:145).  chorus needs its own line: the class sets a per-type
-% chorus/format=\itshape (leadsheet.cls:147) that shadows the global
-% verses-format, so re-assert \bfseries there to get bold *and* keep its
-% (desired) italic.  (The class italicises info/format the same way; left as-is.)
+% (leadsheet.cls:145).  \openup widens the interline spacing (see \mysonglinesep
+% above) without pushing chords off their lyrics.  chorus needs its own line:
+% the class sets a per-type chorus/format=\itshape (leadsheet.cls:147) that
+% shadows the global verses-format, so re-assert \bfseries there for bold *and*
+% keep its (desired) italic.  (The class italicises info/format the same way.)
 \setleadsheets{
-  verses-format       = \bfseries ,
+  verses-format       = {\bfseries\openup\mysonglinesep} ,
   verses-label-format = \mdseries ,
-  chorus/format       = \bfseries\itshape ,
+  chorus/format       = {\bfseries\itshape\openup\mysonglinesep} ,
 }
 
 % One-off, named (not numbered; all use the default ":" separator).  Short
