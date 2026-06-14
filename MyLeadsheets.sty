@@ -118,3 +118,12 @@
   lift/name=L ,
   custompart/name=Part ,
 }
+
+% ---------------------------------------------------------------------------
+% Chords: brick-red, bold, sans
+% ---------------------------------------------------------------------------
+% chords/format is the documented chord-formatting hook (manual: the "chords/"
+% options).  Specifying the whole font -- not just the colour -- keeps chords
+% bold sans regardless of the surrounding section format (e.g. they stay sans
+% in the italic chorus, though they inherit its slant, as in the reference).
+\setleadsheets{ chords/format = {\sffamily\normalsize\bfseries\color{BrickRed}} }
