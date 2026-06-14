@@ -21,8 +21,7 @@
 %
 % Everything here uses the package's *documented* template commands
 % (\verselabel, \ifobeylines, \setleadsheets), patterned on the manual's own
-% "itemize" template, so no LaTeX3 (expl3) syntax is needed except the single
-% helper noted at the bottom.
+% "itemize" template, so no LaTeX3 (expl3) syntax is needed at all.
 \RequirePackage[dvipsnames]{xcolor}
 \RequirePackage{tcolorbox}
 
@@ -46,6 +45,8 @@
 \newcommand\myleadsheetsboxend{\enditemize\endtcolorbox}
 
 % --- one template per part type, colour written in directly ----------------
+% These are not applied automatically; opt in per section by passing the
+% matching template in the .song file, e.g. \begin{verse}[template=versebox].
 \defineversetypetemplate{versebox}     {\myleadsheetsboxbegin{Gray!6}}        {\myleadsheetsboxend}
 \defineversetypetemplate{chorusbox}    {\myleadsheetsboxbegin{Green!9}}       {\myleadsheetsboxend}
 \defineversetypetemplate{solobox}      {\myleadsheetsboxbegin{RoyalPurple!14}}{\myleadsheetsboxend}
@@ -53,22 +54,3 @@
 \defineversetypetemplate{outrobox}     {\myleadsheetsboxbegin{Dandelion!10}}  {\myleadsheetsboxend}
 \defineversetypetemplate{interludebox} {\myleadsheetsboxbegin{Dandelion!15}}  {\myleadsheetsboxend}
 \defineversetypetemplate{bridgebox}    {\myleadsheetsboxbegin{RoyalBlue!14}}  {\myleadsheetsboxend}
-
-% --- point each part type at its own template ------------------------------
-% The per-type option family (leadsheets/verse, ...) has no plain-LaTeX
-% setter, so this one small wrapper uses the LaTeX3 key-setter.  It just sets
-% the documented `template' option as the given type's default.  (Fully
-% documented alternative: delete this and instead write, per section,
-% \begin{verse}[template=versebox] in the .song file.)
-\ExplSyntaxOn
-\NewDocumentCommand \setversetemplate { m m }
-  { \keys_set:nn { leadsheets/#1 } { template = #2 } }
-\ExplSyntaxOff
-
-\setversetemplate{verse}    {versebox}
-\setversetemplate{chorus}   {chorusbox}
-\setversetemplate{solo}     {solobox}
-\setversetemplate{intro}    {introbox}
-\setversetemplate{outro}    {outrobox}
-\setversetemplate{interlude}{interludebox}
-\setversetemplate{bridge}   {bridgebox}

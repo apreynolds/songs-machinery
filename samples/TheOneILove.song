@@ -6,14 +6,14 @@
 
 \begin{song}[]{title={The One I Love}, band={REM}, tempo={127}, key = {Em}}
 
-  \begin{intro}
+  \begin{intro}[template=introbox]
     |: _{Em} \quad
     | _{D} \quad
     | _{Em} \quad
     | _{Em} \quad :|
   \end{intro}
 
-  \begin{verse}
+  \begin{verse}[template=versebox]
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE
@@ -32,14 +32,14 @@
     | ^{Em} \qquad |
   \end{verse}
 
-  \begin{chorus}
+  \begin{chorus}[template=chorusbox]
     |: ^{Em}FIRE
     | ^{D} \qquad
     | ^{Em} \qquad
     | ^{Em} \qquad :|
   \end{chorus}
 
-  \begin{verse}
+  \begin{verse}[template=versebox]
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE
@@ -58,14 +58,14 @@
     | ^{Em} \qquad |
   \end{verse}
 
-  \begin{chorus}
+  \begin{chorus}[template=chorusbox]
     |: ^{Em}FIRE
     | ^{D} \qquad
     | ^{Em} \qquad
     | ^{Em} \qquad :|
   \end{chorus}
 
-  \begin{solo}
+  \begin{solo}[template=solobox]
     | _{G} \quad
     | _{D} \quad
     | _{G} \quad
@@ -76,7 +76,7 @@
     | _{Em} \quad |
   \end{solo}
 
-  \begin{verse}
+  \begin{verse}[template=versebox]
     | ^{Em}THIS ONE GOES OUT
     | ^{D}TO THE ONE I
     | ^{Em}LOVE
@@ -95,14 +95,14 @@
     | ^{Em} \qquad |
   \end{verse}
 
-  \begin{chorus}
+  \begin{chorus}[template=chorusbox]
     |: ^{Em}FIRE
     | ^{D} \qquad
     | ^{Em} \qquad
     | ^{Em} \qquad :|
   \end{chorus}
 
-  \begin{outro}
+  \begin{outro}[template=outrobox]
     | _{Em} \qquad
     | _{D} \quad _{D#} \quad
     | _{Em} \qquad |||
