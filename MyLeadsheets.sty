@@ -11,53 +11,64 @@
 \RequirePackage[margin=\MyMargin,letterpaper]{geometry}
 
 % ---------------------------------------------------------------------------
-% Coloured song-section boxes  (approach B: one template per part type)
+% Coloured song-section boxes  (approach B, plain-LaTeX style)
 % ---------------------------------------------------------------------------
-% Every leadsheets part type (verse, chorus, ...) is given its own
-% tcolorbox-based "template", with its colour written directly into the
-% template.  Writing \begin{verse} ... \end{verse} in the .song file then
-% wraps the section in its coloured box -- no outer wrapper environment.
+% Each leadsheets part type (verse, chorus, ...) gets its own tcolorbox-based
+% "template".  Templates are the package's documented extension point
+% (\defineversetypetemplate, manual section "verse-type templates").  Writing
+% \begin{verse} ... \end{verse} in the .song file then wraps the section in
+% its coloured box -- no outer wrapper environment is needed.
+%
+% Everything here uses the package's *documented* template commands
+% (\verselabel, \ifobeylines, \setleadsheets), patterned on the manual's own
+% "itemize" template, so no LaTeX3 (expl3) syntax is needed except the single
+% helper noted at the bottom.
 \RequirePackage[dvipsnames]{xcolor}
 \RequirePackage{tcolorbox}
 
 % --- shared box body -------------------------------------------------------
-% The colour (#1) is the only thing that varies between part types; the rest
-% reproduces the package's built-in "itemize" template (songs library) so the
-% section label \verselabel keeps its normal placement.  Defined under
-% \ExplSyntaxOn only to reach the package's internal obey-lines handling.
-\ExplSyntaxOn
-\NewDocumentCommand \myleadsheetsboxbegin { m }
-  {
-    \tcolorbox [ left=0pt, right=0pt, boxrule=0mm, arc=0mm, colback=#1 ]
-    \itemize
-    \int_zero:N \@itemdepth
-    \bool_if:NT \l__leadsheets_obey_lines_bool
-      {
-        \dim_zero:N \parskip
-        \keys_set:nn { leadsheets } { obey-lines-parskip = \parsep }
-      }
-    \item [ { \verselabel } ]
-  }
-\NewDocumentCommand \myleadsheetsboxend { }
-  { \enditemize \endtcolorbox }
-\ExplSyntaxOff
+% The colour (#1) is the only thing that varies between part types.  The rest
+% reproduces the package's built-in "itemize" template so the section label
+% \verselabel keeps its normal placement; we only add the tcolorbox around it.
+% \makeatletter is needed solely for \@itemdepth, a standard LaTeX list
+% internal -- exactly as the manual's own itemize example uses it.
+\makeatletter
+\newcommand\myleadsheetsboxbegin[1]{%
+  \tcolorbox[left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=#1]%
+  \itemize
+  \@itemdepth=0
+  \ifobeylines
+    {\setlength{\parskip}{0pt}\setleadsheets{obey-lines-parskip=\parsep}}%
+    {}%
+  \item[{\verselabel}]%
+}
+\makeatother
+\newcommand\myleadsheetsboxend{\enditemize\endtcolorbox}
 
-% --- one template per part type, colour written in directly -----------------
-\defineversetypetemplate {versebox}     { \myleadsheetsboxbegin{Gray!6} }        { \myleadsheetsboxend }
-\defineversetypetemplate {chorusbox}    { \myleadsheetsboxbegin{Green!9} }       { \myleadsheetsboxend }
-\defineversetypetemplate {solobox}      { \myleadsheetsboxbegin{RoyalPurple!14} }{ \myleadsheetsboxend }
-\defineversetypetemplate {introbox}     { \myleadsheetsboxbegin{Dandelion!10} }  { \myleadsheetsboxend }
-\defineversetypetemplate {outrobox}     { \myleadsheetsboxbegin{Dandelion!10} }  { \myleadsheetsboxend }
-\defineversetypetemplate {interludebox} { \myleadsheetsboxbegin{Dandelion!15} }  { \myleadsheetsboxend }
-\defineversetypetemplate {bridgebox}    { \myleadsheetsboxbegin{RoyalBlue!14} }  { \myleadsheetsboxend }
+% --- one template per part type, colour written in directly ----------------
+\defineversetypetemplate{versebox}     {\myleadsheetsboxbegin{Gray!6}}        {\myleadsheetsboxend}
+\defineversetypetemplate{chorusbox}    {\myleadsheetsboxbegin{Green!9}}       {\myleadsheetsboxend}
+\defineversetypetemplate{solobox}      {\myleadsheetsboxbegin{RoyalPurple!14}}{\myleadsheetsboxend}
+\defineversetypetemplate{introbox}     {\myleadsheetsboxbegin{Dandelion!10}}  {\myleadsheetsboxend}
+\defineversetypetemplate{outrobox}     {\myleadsheetsboxbegin{Dandelion!10}}  {\myleadsheetsboxend}
+\defineversetypetemplate{interludebox} {\myleadsheetsboxbegin{Dandelion!15}}  {\myleadsheetsboxend}
+\defineversetypetemplate{bridgebox}    {\myleadsheetsboxbegin{RoyalBlue!14}}  {\myleadsheetsboxend}
 
 % --- point each part type at its own template ------------------------------
+% The per-type option family (leadsheets/verse, ...) has no plain-LaTeX
+% setter, so this one small wrapper uses the LaTeX3 key-setter.  It just sets
+% the documented `template' option as the given type's default.  (Fully
+% documented alternative: delete this and instead write, per section,
+% \begin{verse}[template=versebox] in the .song file.)
 \ExplSyntaxOn
-\keys_set:nn { leadsheets/verse }     { template = versebox }
-\keys_set:nn { leadsheets/chorus }    { template = chorusbox }
-\keys_set:nn { leadsheets/solo }      { template = solobox }
-\keys_set:nn { leadsheets/intro }     { template = introbox }
-\keys_set:nn { leadsheets/outro }     { template = outrobox }
-\keys_set:nn { leadsheets/interlude } { template = interludebox }
-\keys_set:nn { leadsheets/bridge }    { template = bridgebox }
+\NewDocumentCommand \setversetemplate { m m }
+  { \keys_set:nn { leadsheets/#1 } { template = #2 } }
 \ExplSyntaxOff
+
+\setversetemplate{verse}    {versebox}
+\setversetemplate{chorus}   {chorusbox}
+\setversetemplate{solo}     {solobox}
+\setversetemplate{intro}    {introbox}
+\setversetemplate{outro}    {outrobox}
+\setversetemplate{interlude}{interludebox}
+\setversetemplate{bridge}   {bridgebox}
