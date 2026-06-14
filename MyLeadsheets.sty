@@ -11,6 +11,18 @@
 \RequirePackage[margin=\MyMargin,letterpaper]{geometry}
 
 % ---------------------------------------------------------------------------
+% Extra song-part types
+% ---------------------------------------------------------------------------
+% Part types beyond the package/class defaults, used across the song corpus.
+% \newversetype is the documented command for defining a verse-like environment;
+% their names, colours and templates are configured below alongside the built-in
+% types.  (prechorus is already provided by the leadsheet class, so it only needs
+% naming/colouring, not defining here.)
+\newversetype{lift}
+\newversetype{postchorus}
+\newversetype{custompart}   % generic catch-all section (was "mypart" in the reference)
+
+% ---------------------------------------------------------------------------
 % Coloured song-section boxes  (approach B, plain-LaTeX style)
 % ---------------------------------------------------------------------------
 % Each leadsheets part type (verse, chorus, ...) gets its own tcolorbox-based
@@ -54,6 +66,10 @@
 \defineversetypetemplate{outrobox}     {\myleadsheetsboxbegin{Dandelion!10}}  {\myleadsheetsboxend}
 \defineversetypetemplate{interludebox} {\myleadsheetsboxbegin{Dandelion!15}}  {\myleadsheetsboxend}
 \defineversetypetemplate{bridgebox}    {\myleadsheetsboxbegin{RoyalBlue!14}}  {\myleadsheetsboxend}
+\defineversetypetemplate{liftbox}      {\myleadsheetsboxbegin{Green!5}}       {\myleadsheetsboxend}
+\defineversetypetemplate{prechorusbox} {\myleadsheetsboxbegin{Green!5}}       {\myleadsheetsboxend}
+\defineversetypetemplate{postchorusbox}{\myleadsheetsboxbegin{Green!5}}       {\myleadsheetsboxend}
+\defineversetypetemplate{custompartbox}{\myleadsheetsboxbegin{white}}         {\myleadsheetsboxend} % untinted
 
 % ---------------------------------------------------------------------------
 % Section labels: short names, numbered where appropriate
@@ -88,11 +104,17 @@
   chorus/format       = \bfseries\itshape ,
 }
 
-% One-off, named (already use the default ":" separator):
+% One-off, named (not numbered; all use the default ":" separator).  Short
+% abbreviations taken from the reference; adjust to taste.  custompart is meant
+% to be overridden per section with [name=...], "Part" is just its fallback.
 \setleadsheets{
   intro/name=In ,
   solo/name=S ,
   outro/name=Out ,
-  bridge/name=B ,
-  interlude/name=Int ,   % short forms above -- adjust to taste
+  bridge/name=Br ,
+  interlude/name=I/L ,
+  prechorus/name=Pr ,
+  postchorus/name=Po ,
+  lift/name=L ,
+  custompart/name=Part ,
 }
