@@ -1,7 +1,7 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesPackage{MyLeadsheets}
 
-\def\normalbarwidth{.15em}
+\def\normalbarwidth{.09em}
 
 \RequirePackage[T1]{fontenc}
 \RequirePackage[defaultsans]{lato}
@@ -54,3 +54,45 @@
 \defineversetypetemplate{outrobox}     {\myleadsheetsboxbegin{Dandelion!10}}  {\myleadsheetsboxend}
 \defineversetypetemplate{interludebox} {\myleadsheetsboxbegin{Dandelion!15}}  {\myleadsheetsboxend}
 \defineversetypetemplate{bridgebox}    {\myleadsheetsboxbegin{RoyalBlue!14}}  {\myleadsheetsboxend}
+
+% ---------------------------------------------------------------------------
+% Section labels: short names, numbered where appropriate
+% ---------------------------------------------------------------------------
+% Recurring sections auto-number with a compact one-letter prefix (V1:, C1:,
+% ...) from a bare \begin{verse} / \begin{chorus}; one-off sections show a short
+% name (In:, S:, Out:).  Every label ends in ":" and is set in the normal
+% (non-bold) weight.  All documented: the options go through \setleadsheets, and
+% the prefixes come from standard LaTeX counter formatting
+% (\renewcommand\the<counter>, which also drops the default trailing ".").
+% Override any single section in the .song file with, e.g.,
+%   \begin{verse}[named=true,numbered=false,name=Pre-chorus]
+% (handy for repeats or out-of-sequence labels, which auto-numbering can't do).
+
+% Recurring, auto-numbered: number plus the ":" separator (e.g. V1:).
+\setleadsheets{
+  verse/named=false,   verse/numbered=true,   verse/after-label=: ,
+  chorus/named=false,  chorus/numbered=true,  chorus/after-label=: ,
+}
+\renewcommand\theverse{V\arabic{verse}}
+\renewcommand\thechorus{C\arabic{chorus}}
+
+% Section body text in bold (matches the reference); labels are kept un-bold via
+% verses-label-format=\mdseries, overriding the class default of \bfseries
+% (leadsheet.cls:145).  chorus needs its own line: the class sets a per-type
+% chorus/format=\itshape (leadsheet.cls:147) that shadows the global
+% verses-format, so re-assert \bfseries there to get bold *and* keep its
+% (desired) italic.  (The class italicises info/format the same way; left as-is.)
+\setleadsheets{
+  verses-format       = \bfseries ,
+  verses-label-format = \mdseries ,
+  chorus/format       = \bfseries\itshape ,
+}
+
+% One-off, named (already use the default ":" separator):
+\setleadsheets{
+  intro/name=In ,
+  solo/name=S ,
+  outro/name=Out ,
+  bridge/name=B ,
+  interlude/name=Int ,   % short forms above -- adjust to taste
+}
