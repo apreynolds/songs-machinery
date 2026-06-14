@@ -132,3 +132,24 @@
   chords/format = {\sffamily\normalsize\bfseries\color{BrickRed}} ,
   align-chords  = l ,
 }
+
+% ---------------------------------------------------------------------------
+% Song title / header
+% ---------------------------------------------------------------------------
+% One-line header "Title (Band) Tempo Key" (key in brick-red), replacing the
+% class default of "Title" + a second "as played by: ..., key: ..." line.
+% \definesongtitletemplate is the documented mechanism.
+\definesongtitletemplate{mytitle}{%
+  \section*{%
+    \large\sffamily\songproperty{title}\space\normalsize\mdseries
+    \ifsongproperty{band}{(\songproperty{band})\space}{}%
+    \ifsongproperty{tempo}{\songproperty{tempo}\space}{}%
+    \ifsongproperty{key}{\bfseries\textcolor{BrickRed}{\songproperty{key}}}{}%
+  }%
+}
+\setleadsheets{ title-template = mytitle }
+
+% No running header.  The class (via scrlayer-scrpage) puts the song title in the
+% centre of the page header on pages 2+; clear all three header slots to remove
+% it.  The page-number footer (\cofoot in the class) is left untouched.
+\ihead{}\chead{}\ohead{}
