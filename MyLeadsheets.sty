@@ -273,6 +273,34 @@
 \ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
+% Capo variants
+% ---------------------------------------------------------------------------
+% A capo'd song is written in CONCERT pitch with `capo=N' in its \begin{song}
+% properties.  leadsheets' own `transpose-capo' then renders every chord N
+% semitones lower -- the shapes actually fretted with the capo on -- and the
+% title template (below) adds a "capo N" note.  So the DEFAULT build is the
+% capo-shapes sheet and needs no special handling; even a bare vimtex compile is
+% correct.  The displayed key stays concert pitch because the title template
+% prints \songproperty{key} raw, never through the chord transposer.
+%
+% The concert-pitch sibling (e.g. for a bass player) is produced by
+% compile-songs, which injects \def\ConcertVariant{true} before \input.  That
+% turns transpose-capo OFF (chords stay as written = concert) and, via
+% \ifMyLSconcert, suppresses the capo note.  A song with no `capo' property is
+% unaffected either way: transpose-capo with capo=0 transposes by a full octave,
+% i.e. identity (verified -- no enharmonic drift).  NB this means every song must
+% set `key=' (concert pitch); leadsheets warns per chord otherwise.
+\providecommand\ConcertVariant{false}% `true' only on the script's concert build
+\def\MyLSconcertflag{true}% plain \def (not \long) so \ifx matches the injected \def
+\newif\ifMyLSconcert
+\ifx\ConcertVariant\MyLSconcertflag \MyLSconcerttrue \else \MyLSconcertfalse \fi
+\ifMyLSconcert
+  \setleadsheets{ transpose-capo = false }
+\else
+  \setleadsheets{ transpose-capo = true  }
+\fi
+
+% ---------------------------------------------------------------------------
 % Song title / header
 % ---------------------------------------------------------------------------
 % One-line header "Title (Band) Tempo Key" (key in brick-red), replacing the
@@ -284,6 +312,9 @@
     \ifsongproperty{band}{(\songproperty{band})\space}{}%
     \ifsongproperty{tempo}{\songproperty{tempo}\space}{}%
     \ifsongproperty{key}{\bfseries\textcolor{BrickRed}{\songproperty{key}}}{}%
+    \ifMyLSconcert\else
+      \ifsongproperty{capo}{\nobreakspace\notebox{capo \songproperty{capo}}}{}%
+    \fi
   }%
 }
 \setleadsheets{ title-template = mytitle }

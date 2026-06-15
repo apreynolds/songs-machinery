@@ -15,9 +15,20 @@
 #
 # Each listed variant produces SONG--<variant>.pdf. Only `chords` is wired up
 # so far, and for now it is just a copy of the default PDF (no .sty changes
-# yet); see make_variant(). Other directives (e.g. `%! capo: N`) are reserved
-# for later and ignored for now. The magic comment must sit in the leading
-# comment block, before \documentclass (TeX magic-comment convention).
+# yet); see make_variant(). The magic comment must sit in the leading comment
+# block, before \documentclass (TeX magic-comment convention).
+#
+# Capo (a separate axis): a song written in concert pitch with `capo=N' in its
+# \begin{song} properties builds, by default, to the capo-shapes sheet (chords
+# down N, "capo N" note) -- that is pure leadsheets, no script involvement. Add
+#
+#     %! both-pitches
+#
+# to also get the concert-pitch sibling. With it, SONG.pdf becomes the CONCERT
+# sheet (built by injecting \def\ConcertVariant{true}, which the .sty turns into
+# transpose-capo=off + no capo note) and the capo-shapes sheet is renamed
+# SONG-CAPO.pdf. The -CAPO suffix (vs --variant) marks that its musical content
+# differs, not just its presentation.
 #
 # Relies on the global latexmkrc for the pdflatex invocation
 # (--shell-escape, nonstopmode) and on TEXINPUTS (set in .zprofile) for the
@@ -62,6 +73,34 @@ read_variants() {
   done <"$file"
 }
 
+# True if the .song's leading magic-comment block contains `%! both-pitches'
+# (the capo axis: also produce the opposite-pitch sheet). Same leading-block
+# scan as read_variants.
+wants_both_pitches() {
+  local file=$1 line
+  while IFS= read -r line; do
+    if [[ -n $line && ${line#\%} == "$line" ]]; then
+      break
+    fi
+    if [[ $line =~ ^%![[:space:]]*both-pitches[[:space:]]*$ ]]; then
+      return 0
+    fi
+  done <"$file"
+  return 1
+}
+
+# Build the concert-pitch sibling of a capo song: inject \def\ConcertVariant{true}
+# so MyLeadsheets.sty switches transpose-capo off (chords stay as written =
+# concert) and drops the capo note. The injected \def doesn't change the source,
+# so latexmk's source-based up-to-date check would skip the rebuild -- force it
+# with -g. The -pdflatex override mirrors the global latexmkrc invocation.
+compile_concert() {
+  local jobname=$1 src=$2 auxdir=$3
+  latexmk -pdf -g -auxdir="$auxdir" -jobname="$jobname" \
+    -pdflatex='pdflatex --shell-escape %O -synctex=0 -interaction=nonstopmode "\def\ConcertVariant{true} \input{%S}"' \
+    "$src"
+}
+
 # Produce one variant PDF. For now every variant is just a copy of the
 # already-built default PDF — no .sty involvement. When the .sty learns to
 # honour a \def flag, this becomes a real `latexmk -jobname=… \def\Variant{…}`
@@ -75,7 +114,7 @@ make_variant() {
 # Runs in a subshell so the cd (and the aux-dir scheme that depends on cwd)
 # stays local to this build. Returns non-zero if the default compile fails.
 build_song() {
-  local song=$1 dir base jobname auxdir variant
+  local song=$1 dir base jobname auxdir variant capoaux
   dir=$(dirname -- "$song")
   base=$(basename -- "$song")
   jobname=${base%.song}
@@ -92,8 +131,20 @@ build_song() {
     auxdir="$HOME/.cache/latexmk/${PWD##*/}-$jobname"
     mkdir -p "$auxdir" || exit
 
-    latexmk -pdf -auxdir="$auxdir" "$base" || exit
-    echo "    ok: $jobname.pdf"
+    if wants_both_pitches "$base"; then
+      # Capo song wanting both pitches: the default PDF is the CONCERT sheet
+      # (transpose-capo off, no capo note); the capo-shapes sheet takes the
+      # -CAPO suffix (its musical content differs, hence -CAPO not --variant).
+      compile_concert "$jobname" "$base" "$auxdir" || exit
+      echo "    ok: $jobname.pdf (concert pitch)"
+      capoaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname-CAPO"
+      mkdir -p "$capoaux" || exit
+      latexmk -pdf -auxdir="$capoaux" -jobname="$jobname-CAPO" "$base" || exit
+      echo "    + $jobname-CAPO.pdf (capo shapes)"
+    else
+      latexmk -pdf -auxdir="$auxdir" "$base" || exit
+      echo "    ok: $jobname.pdf"
+    fi
 
     for variant in $(read_variants "$base"); do
       case $variant in
