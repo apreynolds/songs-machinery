@@ -1,0 +1,33 @@
+%! variants: chords
+\documentclass[fontsize=14pt,DIV=calc]{leadsheet}
+\usepackage{MyLeadsheets}
+
+\begin{document}
+
+\begin{song}[]{title={Chords Variant Demo}, band={Test}, tempo={120}, key = {Em}}
+
+  \begin{intro}[template=introbox]
+    \measures[repeat]{{_{Em}}{_{D}}{_{Em}}{_{Em}}}
+  \end{intro}
+
+  \begin{verse}[template=versebox]
+    ^{Em}THIS is a lyric ^{D}line with chords \\
+    ^{G}over the ^{C}words to be hidden
+  \end{verse}
+
+  \begin{chorus}[template=chorusbox]
+    ^{Em}FIRE, said the ^{D}man with the gun
+  \end{chorus}
+
+  \begin{chordbox}
+    \measures{{^{Em}}{^{D}}{^{G}}{^{C}}} \\
+    \measures[repeat]{{^{Em}}{^{D}}{^{Em}}{^{Em}}}
+  \end{chordbox}
+
+  \begin{outro}[template=outrobox]
+    ^{Em}fading ^{D}out
+  \end{outro}
+
+\end{song}
+
+\end{document}

@@ -13,10 +13,12 @@
 #
 #     %! variants: chords, lyrics
 #
-# Each listed variant produces SONG--<variant>.pdf. Only `chords` is wired up
-# so far, and for now it is just a copy of the default PDF (no .sty changes
-# yet); see make_variant(). The magic comment must sit in the leading comment
-# block, before \documentclass (TeX magic-comment convention).
+# Each listed variant produces SONG--<variant>.pdf, built by injecting
+# \def\Variant{<variant>} so MyLeadsheets.sty selects that variant's bodies (the
+# chords variant prints chordbox charts and suppresses the lyric verse types).
+# Only `chords' is wired up so far; see compile_variant(). The magic comment must
+# sit in the leading comment block, before \documentclass (TeX magic-comment
+# convention).
 #
 # Capo (a separate axis): a song written in concert pitch with `capo=N' in its
 # \begin{song} properties builds, by default, to the capo-shapes sheet (chords
@@ -140,20 +142,26 @@ compile_original_key() {
     "$src"
 }
 
-# Produce one variant PDF. For now every variant is just a copy of the
-# already-built default PDF — no .sty involvement. When the .sty learns to
-# honour a \def flag, this becomes a real `latexmk -jobname=… \def\Variant{…}`
-# compile; nothing else in the script needs to change.
-make_variant() {
-  local jobname=$1 variant=$2
-  cp -- "$jobname.pdf" "$jobname--$variant.pdf"
+# Build a presentation variant (e.g. chords) of a song: inject \def\Variant{NAME}
+# so MyLeadsheets.sty selects that variant's bodies (the chords variant prints
+# chordbox charts and suppresses the lyric verse types). Output is
+# SONG--NAME.pdf. Forced with -g for the same reason as compile_concert (the
+# source is unchanged, so latexmk's up-to-date check would otherwise skip the
+# rebuild). The -pdflatex override mirrors the global latexmkrc invocation, with
+# the variant name interpolated into the injected \def (hence double quotes and
+# escaped backslashes, unlike the fixed-\def helpers above).
+compile_variant() {
+  local jobname=$1 src=$2 auxdir=$3 variant=$4
+  latexmk -pdf -g -auxdir="$auxdir" -jobname="$jobname--$variant" \
+    -pdflatex="pdflatex --shell-escape %O -synctex=0 -interaction=nonstopmode \"\\def\\Variant{$variant} \\input{%S}\"" \
+    "$src"
 }
 
 # Build the default PDF for one .song file, then any magic-comment variants.
 # Runs in a subshell so the cd (and the aux-dir scheme that depends on cwd)
 # stays local to this build. Returns non-zero if the default compile fails.
 build_song() {
-  local song=$1 dir base jobname auxdir variant capoaux okaux
+  local song=$1 dir base jobname auxdir variant capoaux okaux varaux
   dir=$(dirname -- "$song")
   base=$(basename -- "$song")
   jobname=${base%.song}
@@ -199,8 +207,10 @@ build_song() {
     for variant in $(read_variants "$base"); do
       case $variant in
         chords)
-          make_variant "$jobname" "$variant" || exit
-          echo "    + $jobname--$variant.pdf (copy of default)"
+          varaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname--$variant"
+          mkdir -p "$varaux" || exit
+          compile_variant "$jobname" "$base" "$varaux" "$variant" || exit
+          echo "    + $jobname--$variant.pdf ($variant)"
           ;;
         *)
           echo "compile-songs: variant '$variant' not yet supported, skipping" >&2

@@ -307,6 +307,52 @@
 \fi
 
 % ---------------------------------------------------------------------------
+% Output variant: chords-only  (--chords)
+% ---------------------------------------------------------------------------
+% The chords variant prints a chord chart in place of the lyric body.  It is
+% selected by compile-songs injecting `\def\Variant{chords}' on the command line
+% before \input; the \providecommand below makes the ordinary build's \Variant
+% resolve to "default".  (Same injection pattern as the capo/transpose axes.)
+%
+% Two mirrored halves, so exactly one of {lyric verse types, chordbox} prints
+% per variant:
+%   * chordbox -- the environment that carries the chart (\measures lines).  It
+%     prints ONLY in the chords variant.  In every other variant its body is
+%     collected as an xparse `b' (body) argument and simply never used, so it is
+%     discarded silently -- no throwaway \vbox, hence no under/overfull warnings,
+%     and no leadsheets internals.
+%   * In the chords variant, conversely, every lyric-bearing verse type (verse,
+%     chorus, ...) is suppressed the same way -- redefined to swallow its body
+%     via `+b' -- so only chordbox bodies survive.
+%
+% NB the verse-type list below must name every type defined above (the leadsheets
+% built-ins, the class's prechorus, and our \newversetype additions); a type
+% missing here would still print its lyrics in the chords sheet.  \RenewDoc...
+% errors if a listed type does not exist, so the list and the definitions above
+% stay honest with each other.
+\providecommand\Variant{default}
+\def\MyLSchordsflag{chords}
+\newif\ifMyLSchords
+\ifx\Variant\MyLSchordsflag \MyLSchordstrue \else \MyLSchordsfalse \fi
+
+\ifMyLSchords
+  % chords variant: chordbox prints its body; lyric verse types are discarded.
+  \NewDocumentEnvironment{chordbox}{O{}}{\par}{\par}
+  \ExplSyntaxOn
+  \clist_map_inline:nn
+    {
+      verse, verse*, chorus, chorus*, intro, intro*, outro, interlude,
+      bridge, info, solo, solo*, prechorus, prechorus*,
+      lift, postchorus, custompart
+    }
+    { \RenewDocumentEnvironment {#1} { O{} +b } {} {} }
+  \ExplSyntaxOff
+\else
+  % every other variant: chordbox is discarded; lyric verse types untouched.
+  \NewDocumentEnvironment{chordbox}{O{} +b}{}{}
+\fi
+
+% ---------------------------------------------------------------------------
 % Song title / header
 % ---------------------------------------------------------------------------
 % One-line header "Title (Band) Tempo Key" (key in brick-red), replacing the
