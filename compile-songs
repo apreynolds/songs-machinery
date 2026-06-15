@@ -8,9 +8,16 @@
 # ~/.cache/latexmk/, matching the aux_dir scheme used by vimtex (see the note
 # by the latexmk call).
 #
-# Deliberately minimal: default PDF only. No chart/lyrics variants, capo
-# handling, or magic-comment flags yet — those come later (see CLAUDE.md
-# "Future work - compilation script").
+# Variants via magic comments: a leading comment block in the .song file can
+# request extra PDFs, e.g.
+#
+#     %! variants: chords, lyrics
+#
+# Each listed variant produces SONG--<variant>.pdf. Only `chords` is wired up
+# so far, and for now it is just a copy of the default PDF (no .sty changes
+# yet); see make_variant(). Other directives (e.g. `%! capo: N`) are reserved
+# for later and ignored for now. The magic comment must sit in the leading
+# comment block, before \documentclass (TeX magic-comment convention).
 #
 # Relies on the global latexmkrc for the pdflatex invocation
 # (--shell-escape, nonstopmode) and on TEXINPUTS (set in .zprofile) for the
@@ -30,6 +37,77 @@ case "${1:-}" in
     exit 0
     ;;
 esac
+
+# Read requested variants from a .song file's leading magic-comment block.
+# Recognises lines of the form `%! variants: a, b, c` (flexible spacing) and
+# echoes one variant token per line. Scanning stops at the first line that is
+# neither blank nor a `%` comment, so only the leading block is consulted.
+read_variants() {
+  local file=$1 line val tok
+  while IFS= read -r line; do
+    # First real (non-blank, non-comment) line ends the magic-comment block.
+    if [[ -n $line && ${line#\%} == "$line" ]]; then
+      break
+    fi
+    if [[ $line =~ ^%![[:space:]]*variants[[:space:]]*:[[:space:]]*(.*)$ ]]; then
+      val=${BASH_REMATCH[1]}
+      IFS=',' read -ra toks <<<"$val"
+      for tok in "${toks[@]}"; do
+        # Trim surrounding whitespace.
+        tok=${tok#"${tok%%[![:space:]]*}"}
+        tok=${tok%"${tok##*[![:space:]]}"}
+        [[ -n $tok ]] && printf '%s\n' "$tok"
+      done
+    fi
+  done <"$file"
+}
+
+# Produce one variant PDF. For now every variant is just a copy of the
+# already-built default PDF — no .sty involvement. When the .sty learns to
+# honour a \def flag, this becomes a real `latexmk -jobname=… \def\Variant{…}`
+# compile; nothing else in the script needs to change.
+make_variant() {
+  local jobname=$1 variant=$2
+  cp -- "$jobname.pdf" "$jobname--$variant.pdf"
+}
+
+# Build the default PDF for one .song file, then any magic-comment variants.
+# Runs in a subshell so the cd (and the aux-dir scheme that depends on cwd)
+# stays local to this build. Returns non-zero if the default compile fails.
+build_song() {
+  local song=$1 dir base jobname auxdir variant
+  dir=$(dirname -- "$song")
+  base=$(basename -- "$song")
+  jobname=${base%.song}
+
+  (
+    # Compile in the source's own directory so the PDF lands next to the
+    # source (latexmk's out-dir defaults to cwd, and only -auxdir is set).
+    # Auxiliary files go to a per-project dir under ~/.cache/latexmk/,
+    # replicating the aux_dir scheme in ~/.config/vim/custom/vimtex.vim
+    # ({parent-dir}-{jobname}) so this script and vimtex share one
+    # incremental-build database. The aux files are git-ignored scratch;
+    # keeping them lets latexmk skip unchanged rebuilds.
+    cd "$dir" || exit
+    auxdir="$HOME/.cache/latexmk/${PWD##*/}-$jobname"
+    mkdir -p "$auxdir" || exit
+
+    latexmk -pdf -auxdir="$auxdir" "$base" || exit
+    echo "    ok: $jobname.pdf"
+
+    for variant in $(read_variants "$base"); do
+      case $variant in
+        chords)
+          make_variant "$jobname" "$variant" || exit
+          echo "    + $jobname--$variant.pdf (copy of default)"
+          ;;
+        *)
+          echo "compile-songs: variant '$variant' not yet supported, skipping" >&2
+          ;;
+      esac
+    done
+  )
+}
 
 # Collect the songs to build: explicit arguments, or every *.song in cwd.
 if [[ $# -gt 0 ]]; then
@@ -54,26 +132,8 @@ for song in "${songs[@]}"; do
     continue
   fi
 
-  dir=$(dirname -- "$song")
-  base=$(basename -- "$song")
-
   echo "==> $song"
-  # Compile in the source's own directory so the PDF lands next to the source
-  # (latexmk's out-dir defaults to the cwd, and only -auxdir is set below).
-  # Subshell keeps the cd local to this iteration. Auxiliary files are
-  # redirected to a per-project dir under ~/.cache/latexmk/, replicating the
-  # aux_dir scheme in ~/.config/vim/custom/vimtex.vim ({parent-dir}-{jobname})
-  # so this script and vimtex share one incremental-build database. The aux
-  # files are git-ignored scratch; keeping them lets latexmk skip unchanged
-  # rebuilds.
-  if (
-    cd "$dir" || exit
-    auxdir="$HOME/.cache/latexmk/${PWD##*/}-${base%.song}"
-    mkdir -p "$auxdir" || exit
-    latexmk -pdf -auxdir="$auxdir" "$base"
-  ); then
-    echo "    ok: ${song%.song}.pdf"
-  else
+  if ! build_song "$song"; then
     echo "compile-songs: FAILED on '$song'" >&2
     failed+=("$song")
   fi
