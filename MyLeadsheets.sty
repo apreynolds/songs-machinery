@@ -168,6 +168,16 @@
 % don't butt against the barlines (matches the reference's "| text |" breathing
 % room).  It's a macro, not a length, so its em is the song-body font at use
 % time; retune with \renewcommand.
+%
+% Line breaks between \measures lines are explicit \\ in the .song, on purpose.
+% \measures deliberately does NOT emit its own trailing break: it can't tell
+% whether it's the last line of a section, and a trailing \\ before the box
+% template's end gives an "Underfull \hbox" warning (breaks the clean-log goal).
+% The \\-free alternative is leadsheets' obey-lines (newline => break, no \\),
+% which tests clean -- but it's a song-level switch (affects lyric bodies too)
+% and changes the spacing knob from \openup\mysonglinesep to obey-lines-parskip,
+% so it's a whole-document authoring decision, not a \measures concern.  Leaving
+% explicit \\ for now (see CLAUDE.md "Future work" for the obey-lines findings).
 \newlength\minmeasure
 \setlength\minmeasure{2.0cm}
 \newcommand\measurepad{0.35em}
