@@ -22,7 +22,7 @@
 # \begin{song} properties builds, by default, to the capo-shapes sheet (chords
 # down N, "capo N" note) -- that is pure leadsheets, no script involvement. Add
 #
-#     %! both-pitches
+#     %! capo-pair
 #
 # to also get the concert-pitch sibling. With it, SONG.pdf becomes the CONCERT
 # sheet (built by injecting \def\ConcertVariant{true}, which the .sty turns into
@@ -73,16 +73,16 @@ read_variants() {
   done <"$file"
 }
 
-# True if the .song's leading magic-comment block contains `%! both-pitches'
+# True if the .song's leading magic-comment block contains `%! capo-pair'
 # (the capo axis: also produce the opposite-pitch sheet). Same leading-block
 # scan as read_variants.
-wants_both_pitches() {
+wants_capo_pair() {
   local file=$1 line
   while IFS= read -r line; do
     if [[ -n $line && ${line#\%} == "$line" ]]; then
       break
     fi
-    if [[ $line =~ ^%![[:space:]]*both-pitches[[:space:]]*$ ]]; then
+    if [[ $line =~ ^%![[:space:]]*capo-pair[[:space:]]*$ ]]; then
       return 0
     fi
   done <"$file"
@@ -131,7 +131,7 @@ build_song() {
     auxdir="$HOME/.cache/latexmk/${PWD##*/}-$jobname"
     mkdir -p "$auxdir" || exit
 
-    if wants_both_pitches "$base"; then
+    if wants_capo_pair "$base"; then
       # Capo song wanting both pitches: the default PDF is the CONCERT sheet
       # (transpose-capo off, no capo note); the capo-shapes sheet takes the
       # -CAPO suffix (its musical content differs, hence -CAPO not --variant).
