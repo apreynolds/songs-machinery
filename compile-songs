@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# compile-songs — compile .song files into their default song-sheet PDFs
+# Usage: compile-songs [SONG.song ...]
+#
+# With no arguments, compiles every *.song file in the current directory.
+# For each source it produces SONG.pdf alongside the source (the default
+# lyrics+chords sheet). Auxiliary files are sent to a per-project dir under
+# ~/.cache/latexmk/, matching the aux_dir scheme used by vimtex (see the note
+# by the latexmk call).
+#
+# Deliberately minimal: default PDF only. No chart/lyrics variants, capo
+# handling, or magic-comment flags yet — those come later (see CLAUDE.md
+# "Future work - compilation script").
+#
+# Relies on the global latexmkrc for the pdflatex invocation
+# (--shell-escape, nonstopmode) and on TEXINPUTS (set in .zprofile) for the
+# PR#46-shadowed leadsheets file.
+
+set -uo pipefail
+
+usage() {
+  # Print the header block (everything after the shebang, up to the first
+  # blank-ish line) so -h stays in sync with the comment above.
+  sed -n '2,/^$/p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+case "${1:-}" in
+  -h | --help)
+    usage
+    exit 0
+    ;;
+esac
+
+# Collect the songs to build: explicit arguments, or every *.song in cwd.
+if [[ $# -gt 0 ]]; then
+  songs=("$@")
+else
+  shopt -s nullglob
+  songs=(*.song)
+  shopt -u nullglob
+fi
+
+if [[ ${#songs[@]} -eq 0 ]]; then
+  echo "compile-songs: no .song files found" >&2
+  exit 1
+fi
+
+failed=()
+
+for song in "${songs[@]}"; do
+  if [[ ! -f $song ]]; then
+    echo "compile-songs: skipping '$song' (not a file)" >&2
+    failed+=("$song")
+    continue
+  fi
+
+  dir=$(dirname -- "$song")
+  base=$(basename -- "$song")
+
+  echo "==> $song"
+  # Compile in the source's own directory so the PDF lands next to the source
+  # (latexmk's out-dir defaults to the cwd, and only -auxdir is set below).
+  # Subshell keeps the cd local to this iteration. Auxiliary files are
+  # redirected to a per-project dir under ~/.cache/latexmk/, replicating the
+  # aux_dir scheme in ~/.config/vim/custom/vimtex.vim ({parent-dir}-{jobname})
+  # so this script and vimtex share one incremental-build database. The aux
+  # files are git-ignored scratch; keeping them lets latexmk skip unchanged
+  # rebuilds.
+  if (
+    cd "$dir" || exit
+    auxdir="$HOME/.cache/latexmk/${PWD##*/}-${base%.song}"
+    mkdir -p "$auxdir" || exit
+    latexmk -pdf -auxdir="$auxdir" "$base"
+  ); then
+    echo "    ok: ${song%.song}.pdf"
+  else
+    echo "compile-songs: FAILED on '$song'" >&2
+    failed+=("$song")
+  fi
+done
+
+if [[ ${#failed[@]} -gt 0 ]]; then
+  echo "compile-songs: ${#failed[@]} of ${#songs[@]} failed: ${failed[*]}" >&2
+  exit 1
+fi
