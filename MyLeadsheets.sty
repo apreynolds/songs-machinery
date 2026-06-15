@@ -173,27 +173,67 @@
 \newcommand\measurepad{0.35em}
 \ExplSyntaxOn
 \box_new:N  \l__myls_measure_box
+\box_new:N  \l__myls_tmp_box
+\dim_new:N  \l__myls_normalbar_dim
+\dim_new:N  \l__myls_open_delta_dim
+\dim_new:N  \l__myls_close_delta_dim
+\dim_new:N  \l__myls_target_dim
+\int_new:N  \l__myls_total_int
+\int_new:N  \l__myls_index_int
 \bool_new:N \l__myls_first_measure_bool
 \cs_new_protected:Npn \__myls_openbar:n  #1
   { \str_case:nnF {#1} { {repeat} {\leftrepeat} } {\normalbar} }
 \cs_new_protected:Npn \__myls_closebar:n #1
   { \str_case:nnF {#1} { {repeat} {\rightrepeat} {final} {\stopbar} } {\normalbar} }
-\cs_new_protected:Npn \__myls_measurebox:n #1
+% #1 = the minimum-width target for this measure; #2 = the measure content.
+\cs_new_protected:Npn \__myls_measurebox:nn #1#2
   {
-    \hbox_set:Nn \l__myls_measure_box { \kern\measurepad #1 ~ \unskip \kern\measurepad }
-    \dim_compare:nNnTF { \box_wd:N \l__myls_measure_box } < \minmeasure
-      { \hbox_to_wd:nn \minmeasure { \box_use:N \l__myls_measure_box \hfil } }
+    \hbox_set:Nn \l__myls_measure_box { \kern\measurepad #2 ~ \unskip \kern\measurepad }
+    \dim_compare:nNnTF { \box_wd:N \l__myls_measure_box } < {#1}
+      { \hbox_to_wd:nn {#1} { \box_use:N \l__myls_measure_box \hfil } }
       { \box_use:N \l__myls_measure_box }
   }
+% End-bar width compensation: the opening symbol (|: from \leftrepeat) is the
+% first thing on the line, so a wide one shifts every following barline right;
+% the closing symbol (:| , |||) overhangs to the right of where a plain | sits.
+% Either way a repeat/final line's barlines stop lining up with the plain lines
+% above/below it.  We measure each end symbol's *extra* width over a plain bar
+% -- open_delta = w(openbar)-w(normalbar), close_delta likewise -- and shrink the
+% FIRST measure by open_delta and the LAST by close_delta.  That pulls the first
+% barline left into place and slides the closing symbol left so its right edge
+% lands exactly where a plain line's final bar does; the middle measures are
+% untouched and realign on their own.  A single-measure line is both first and
+% last, so it takes both deltas.  For a plain line both deltas are 0, so nothing
+% changes.  (Visible only where measures actually hit the minimum -- i.e. charts;
+% wide lyric measures don't align anyway, per the "min-width is not a column
+% grid" note in CLAUDE.md.)
 \NewDocumentCommand \measures { O{} m }
   {
+    \hbox_set:Nn \l__myls_tmp_box { \normalbar }
+    \dim_set:Nn  \l__myls_normalbar_dim { \box_wd:N \l__myls_tmp_box }
+    \hbox_set:Nn \l__myls_tmp_box { \__myls_openbar:n {#1} }
+    \dim_set:Nn  \l__myls_open_delta_dim
+      { \box_wd:N \l__myls_tmp_box - \l__myls_normalbar_dim }
+    \hbox_set:Nn \l__myls_tmp_box { \__myls_closebar:n {#1} }
+    \dim_set:Nn  \l__myls_close_delta_dim
+      { \box_wd:N \l__myls_tmp_box - \l__myls_normalbar_dim }
+    \int_set:Nn  \l__myls_total_int { \tl_count:n {#2} }
+    \int_zero:N  \l__myls_index_int
     \bool_set_true:N \l__myls_first_measure_bool
     \tl_map_inline:nn {#2}
       {
+        \int_incr:N \l__myls_index_int
+        \dim_set:Nn \l__myls_target_dim { \minmeasure }
         \bool_if:NTF \l__myls_first_measure_bool
-          { \__myls_openbar:n {#1} \bool_set_false:N \l__myls_first_measure_bool }
+          {
+            \__myls_openbar:n {#1}
+            \dim_sub:Nn \l__myls_target_dim { \l__myls_open_delta_dim }
+            \bool_set_false:N \l__myls_first_measure_bool
+          }
           { \normalbar }
-        \__myls_measurebox:n {##1}
+        \int_compare:nNnT { \l__myls_index_int } = { \l__myls_total_int }
+          { \dim_sub:Nn \l__myls_target_dim { \l__myls_close_delta_dim } }
+        \__myls_measurebox:nn { \l__myls_target_dim } {##1}
       }
     \__myls_closebar:n {#1}
   }
@@ -220,3 +260,5 @@
 % footer; \clearpairofpagestyles wipes every head/foot slot of the scrheadings
 % pagestyle (and its plain variant) in one documented command.
 \clearpairofpagestyles
+
+\setleadsheets{ print-chords = true }
