@@ -2,7 +2,6 @@
 \usepackage{MyLeadsheets}
 
 \begin{document}
-\sffamily
 
 \begin{song}[]{title={The One I Love}, band={REM}, tempo={127}, key = {Em}}
 

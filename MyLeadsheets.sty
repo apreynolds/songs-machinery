@@ -7,6 +7,12 @@
 \RequirePackage[defaultsans]{lato}
 \RequirePackage[scale=0.96]{newtxtt}
 
+% Make the document body sans by default so .song files need no \sffamily after
+% \begin{document}.  lato's [defaultsans] sets Lato as the *sans* family but
+% leaves \familydefault at the roman family; repointing it at \sfdefault is the
+% standard LaTeX route (newtxtt still supplies \ttfamily, used by chords/measures).
+\renewcommand*\familydefault{\sfdefault}
+
 \newcommand\MyMargin{0.3cm}
 \RequirePackage[margin=\MyMargin,letterpaper]{geometry}
 
