@@ -142,6 +142,29 @@
 }
 
 % ---------------------------------------------------------------------------
+% Inline markers  (TEMPORARY PORT from MyLeadsheets-TEMP-REFERENCE.sty)
+% ---------------------------------------------------------------------------
+% \mydot  -- small brick-red beat dot, used inside measures (e.g. ^{\mydot}).
+% \notebox -- small boxed performance note (e.g. \notebox{pause}).
+% Ported verbatim from the reference so the Uberlin / EverybodyHurts examples
+% compile; both rely only on packages already loaded above (TikZ via tcolorbox,
+% colours via xcolor).  Flagged TEMPORARY: they predate the clean rebuild and may
+% be reworked later (see CLAUDE.md "not yet ported" note alongside \repeatbar).
+\newcommand\mydot{%
+  \begin{tikzpicture}
+  \draw (0,0) ;
+  \filldraw[BrickRed] (0,0.12) circle (0.9pt) ;
+  \end{tikzpicture}%
+}
+\newcommand\notebox[1]{%
+  {%
+    \raisebox{0.1em}{\fcolorbox{RoyalBlue}{White}{%
+      \bfseries\ttfamily\upshape\textcolor{RoyalBlue}{#1}%
+    }}%
+  }%
+}
+
+% ---------------------------------------------------------------------------
 % Measures: minimum bar spacing
 % ---------------------------------------------------------------------------
 % leadsheets' bar "|" is just an inline rule; the span between two bars has no
