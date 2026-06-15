@@ -1,0 +1,38 @@
+%! transpose-pair
+\documentclass[fontsize=14pt,DIV=calc]{leadsheet}
+\usepackage{MyLeadsheets}
+
+\begin{document}
+
+% Transcribed in C, performed up a whole step in D.  `transpose=\SongTranspose'
+% (the amount N lives in the \providecommand) gives the transposed default PDF;
+% `%! transpose-pair' also emits TransposeDemo-OriginalKey.pdf -- the as-written
+% C chart -- which compile-songs builds by injecting \def\SongTranspose{0}.  The
+% macro indirection (not a literal transpose=2) is what lets the original-key
+% build override the amount; a bare/vimtex compile uses the \providecommand
+% default (2), i.e. the transposed sheet.
+%
+% NB key label: the title template still prints key={C} raw, so the transposed
+% default currently shows "C" even though its chords are in D -- the key-label
+% follow-the-transposition behaviour is deferred (see CLAUDE.md).
+\providecommand\SongTranspose{2}
+\begin{song}[transpose=\SongTranspose]{title={Transpose Demo}, key={C}}
+  \sffamily
+
+  \begin{verse}[template=versebox]
+    | ^{C}one little
+    | ^{F}two little
+    | ^{G}three little
+    | ^{Am}words |
+  \end{verse}
+
+  \begin{chorus}[template=chorusbox]
+    | ^{C}sing it
+    | ^{G}loud and
+    | ^{F}sing it
+    | ^{C}proud |
+  \end{chorus}
+
+\end{song}
+
+\end{document}
