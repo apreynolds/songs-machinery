@@ -6,7 +6,6 @@
 \RequirePackage[T1]{fontenc}
 \RequirePackage[defaultsans]{lato}
 \RequirePackage[scale=0.96]{newtxtt}
-\RequirePackage{amssymb}   % \blacktriangle / \blacklozenge for difficulty ratings
 
 % Make the document body sans by default so .song files need no \sffamily after
 % \begin{document}.  lato's [defaultsans] sets Lato as the *sans* family but
@@ -218,15 +217,32 @@
 % A song carries an optional difficulty glyph via the custom song property
 % `difficulty`, written by the author as one of the three symbol macros below,
 % e.g. \begin{song}[]{title=..., difficulty={\moderate}}.  The glyph prints as a
-% leading marker in the title header (see the title template).  Ported verbatim
-% from the reference .sty: \resizebox normalises each symbol to a common ~0.9em
-% width and \raisebox nudges it onto the title baseline.  Depends only on
-% amssymb (\blacktriangle, \blacklozenge -- loaded above), graphicx's \resizebox
-% (pulled in transitively by tcolorbox/pgf), and dvipsnames colours (\easy/
-% \moderate use ForestGreen/RoyalBlue; \difficult is left black for contrast).
-\newcommand\easy{\raisebox{-0.1em}{\resizebox{0.9em}{!}{\textcolor{ForestGreen}{$\bullet$}}}}
-\newcommand\moderate{\resizebox{0.9em}{!}{\textcolor{RoyalBlue}{$\blacktriangle$}}}
-\newcommand\difficult{\raisebox{0.16em}{\resizebox{0.9em}{0.65em}{$\blacklozenge$}}}
+% leading marker in the title header (see the title template).
+%
+% These are drawn in TikZ (already loaded via tcolorbox) rather than set as
+% amssymb math glyphs (\bullet/\blacktriangle/\blacklozenge): song sheets do no
+% mathematical typesetting, so pulling in amssymb just for three shapes is
+% avoidable weight.  (The only other "math" symbols a song uses -- \rightarrow,
+% \Uparrow -- are LaTeX-kernel symbols that need no amssymb either, so dropping
+% it costs nothing.)  This also matches the existing inline markers (\repeatbar,
+% \mydot), which are likewise hand-drawn TikZ.
+%
+% \MyLSdifficultysize is the single size knob (glyph height); each shape is drawn
+% in a unit box scaled by it (x/y = that length), so coordinates read as
+% fractions of the glyph size.  baseline=-0.5ex sits the picture's y=0 near the
+% text's math axis, vertically centring the glyph on the title.  Colours: easy =
+% ForestGreen, moderate = RoyalBlue (dvipsnames); difficult stays black for
+% contrast, as in the reference.
+\newlength\MyLSdifficultysize
+\setlength\MyLSdifficultysize{0.78em}
+\newcommand\MyLSdifficultyglyph[2]{% #1 = colour, #2 = fill path in the unit box
+  \begin{tikzpicture}[baseline=-0.5ex,x=\MyLSdifficultysize,y=\MyLSdifficultysize]
+    \fill[#1] #2 ;
+  \end{tikzpicture}%
+}
+\newcommand\easy     {\MyLSdifficultyglyph{ForestGreen}{(0,0) circle (0.5)}}
+\newcommand\moderate {\MyLSdifficultyglyph{RoyalBlue}{(0,0.5) -- (-0.45,-0.35) -- (0.45,-0.35) -- cycle}}
+\newcommand\difficult{\MyLSdifficultyglyph{black}{(0,0.5) -- (0.4,0) -- (0,-0.5) -- (-0.4,0) -- cycle}}
 
 % `difficulty` is not a leadsheets built-in (unlike title/band/tempo/key/capo),
 % so it must be registered with the documented \definesongproperty before
