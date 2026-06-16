@@ -743,28 +743,46 @@
 \fi
 
 % ---------------------------------------------------------------------------
-% Force an even page count  (opt-in, off by default)
+% Even-page / odd-start padding for two-page (spread) digital viewing
 % ---------------------------------------------------------------------------
-% These PDFs are viewed digitally in two-page (spread) mode, where an odd total
-% page count throws every subsequent spread off by one.  A song opts in by
-% putting \ForceEvenPages in its preamble; nothing happens otherwise.
+% These PDFs are read on screen in two-page (spread) mode, where parity matters:
+% one page of the wrong parity shoves every later spread off by one.  Two opt-in
+% tools, both built on the same "ship a blank page" idiom (\MyLSblankpage):
+% \null forces the otherwise-empty page to actually ship, \thispagestyle{empty}
+% keeps it free of any head/foot (matching the no-numbers layout above).
 %
-% At \AtEndDocument the final \clearpage has shipped the last content page, so
-% the `page' counter holds (pages-shipped + 1): odd counter => even content =>
-% leave alone; even counter => odd content => append one blank page.  Crucially
-% the parity is measured on the natural content BEFORE the blank is added, so the
-% measurement is identical on every run -- no oscillation under latexmk (a
-% \pageref{LastPage}-style test would count the blank it just added and flip
-% parity each rebuild).  \null forces the otherwise-empty page to ship;
-% \thispagestyle{empty} keeps it free of any head/foot (matches the no-numbers
-% layout above).
+% Parity note (shared by both): after a \clearpage the `page' counter holds the
+% number the NEXT shipped page will get, i.e. (pages-shipped + 1).  So an odd
+% counter means an even number of pages has shipped, and vice versa.  Both tools
+% test this counter and conditionally append ONE blank -- and crucially measure
+% BEFORE adding it, so the decision is identical on every run (no oscillation
+% under latexmk; a \pageref{LastPage}-style test would instead count the blank it
+% just added and flip parity each rebuild).
+\newcommand\MyLSblankpage{\null\thispagestyle{empty}\clearpage}
+
+% --- \ForceEvenPages: pad a STANDALONE song to an even total ------------------
+% A song opts in by putting \ForceEvenPages in its preamble; nothing happens
+% otherwise.  Fires once at \AtEndDocument: even counter => odd content => append
+% a blank to make the total even.  (No use in a songbook -- \AtEndDocument fires
+% once for the whole book, not per included song; use \clearoddpage there.)
 \newif\ifMyLSforceeven
 \newcommand\ForceEvenPages{\MyLSforceeventrue}
 \AtEndDocument{%
   \ifMyLSforceeven
     \clearpage
-    \ifodd\value{page}\else
-      \null\thispagestyle{empty}\clearpage
-    \fi
+    \ifodd\value{page}\else \MyLSblankpage \fi
   \fi
+}
+
+% --- \clearoddpage: start the NEXT block on an odd page -----------------------
+% For songbooks: use it in place of \newpage before each \includeleadsheet (also
+% before the first, which pads the TOC to even so song 1 lands on an odd page).
+% Each later song then begins on an odd page, and blanks appear only where a song
+% ended on an odd page -- a naturally even-length song gets none.  This is what
+% KOMA's \cleardoubleoddpage would do, but that gates its blank behind
+% \if@twoside (scrartcl.cls), and this class is single-sided; going twoside would
+% swap margins and restore headers, so we pad explicitly instead.
+\newcommand\clearoddpage{%
+  \clearpage
+  \ifodd\value{page}\else \MyLSblankpage \fi
 }
