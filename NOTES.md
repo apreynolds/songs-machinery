@@ -74,10 +74,10 @@ against the project's design goals — so avoid unless specifically wanted.)
 
 ## Mechanism reference
 
-Internals of the IMPLEMENTED compile-time-transpose features. The authoring
-contracts (what to type in a `.song`, output naming, constraints) stay in
-CLAUDE.md; this is the how-it-works detail for when the mechanism itself needs
-touching.
+Internals of the IMPLEMENTED compile-time-transpose features. The *condensed*
+authoring contracts (what to type in a `.song`) live in CLAUDE.md's "Output
+variants" section; this is the full how-it-works, output mapping, and rationale
+for when the mechanism itself needs touching.
 
 ### Capo variants
 
@@ -130,6 +130,33 @@ native build under `-jobname=Song-CAPO`.
   does the injected `-g` build; `build_song()` routes plain `Song.pdf`→concert and
   `Song-CAPO.pdf`→native shapes.
 
+**Output mapping & policy.** Policy: always transcribe in concert pitch; a capo
+song is just a concert song that additionally carries `capo=N`. Two motivating
+cases both collapse to that: (1) a song transcribed with no capo (say concert B)
+can still emit a `-CAPO` sheet whose chords are the capo shapes; (2) a song
+fretted with a capo (concert Gm, sections fingered in Em) can emit both the
+Em-shapes sheet and a concert sheet (e.g. for a bassist). The mapping:
+
+    capo=N                  -> Song.pdf       (capo shapes + "capo N")
+    capo=N, %! capo-pair    -> Song.pdf       (concert)
+                               Song-CAPO.pdf  (capo shapes + "capo N")
+
+Suffix conventions: `-CAPO` (single hyphen) marks *different musical content*;
+`--chords`/`--lyrics` (double hyphen) marks a *different presentation of the same
+content*.
+
+**Constraint — never `transpose=M` in a capo song.** The capo axis owns
+transposition (via `capo=N` + `transpose-capo`); a literal `[transpose=M]`
+combines with it (`net_steps = M − N`) and corrupts both sheets. If a baseline
+transpose is ever needed alongside a capo, bake it into the authored chords.
+
+**Two independent flag families** decide which PDFs are produced — the
+chords/lyrics axis (`%! variants:`) and the capo axis (`capo=N` + optional
+`%! capo-pair`). A song uses either alone or both; keep them mentally separate.
+Still pending: the `\fixedchord` port for accidental-bearing concert keys (`F#m`
+etc.), and folding the chords/lyrics axis together with the capo axis (a chords
+variant of *each* pitch).
+
 ### Transpose variants
 
 Original-key sibling, parallel to capo but for a *real* key change (the chords'
@@ -160,6 +187,14 @@ produces `TransposeDemo.pdf` (chords in D) and `TransposeDemo-OriginalKey.pdf`
   `SONG-OriginalKey.pdf`. **No `.sty` change at all** — leadsheets does the
   transposition.
 
+**Naming:** `SONG.pdf` (transposed, the default) + `SONG-OriginalKey.pdf` —
+single hyphen like `-CAPO`, marking different musical content.
+
+**Capo vs transpose — keep them straight.** Capo changes the fingering shapes,
+not the sounding key (label stays concert), driven by `capo=N` + `transpose-capo`.
+Transpose changes the sounding key (label should follow), driven by
+`transpose=\SongTranspose`. Independent axes; a song uses at most one.
+
 ### Deferred — the key label following transposition
 
 The title template prints `\songproperty{key}` raw, so a transposed `SONG.pdf`
@@ -180,3 +215,184 @@ window — `Class X Warning:` messages (e.g. KOMA's own warnings about incompati
 packages) appear in the raw log but are invisible in the quickfix. When diagnosing
 warnings, check the raw log at `~/.cache/latexmk/{dirname}-{jobname}/` (vimtex
 compilations) or `~/.cache/latexmk/${project_name}_$hash/` (Generate* commands).
+
+## compile-songs — status
+
+`compile-songs` (repo root, `~/repos/1sys/tex/songs/compile-songs`) compiles each
+`.song` to its default PDF and reads magic comments in the **leading** comment
+block (first non-blank, non-`%` line ends the block, mirroring the TeX-engine
+magic comment) to build siblings. The script carries full inline comments; this
+is just the orientation and the live status. See *Output variants* in CLAUDE.md
+for the authoring contracts and *Mechanism reference* above for the internals.
+
+Magic comments (each axis independent):
+
+    %! variants: chords, lyrics   chords/lyrics axis -> Song--<variant>.pdf
+    %! capo-pair                  capo axis -> concert + Song-CAPO.pdf
+    %! transpose-pair             transpose axis -> Song-OriginalKey.pdf
+
+**Built:**
+- Default PDF for each `.song` (always produced).
+- `-h`/`--help`; no args = every `*.song` in cwd, else the named files. A per-song
+  failure is reported and skipped; non-zero exit if any failed.
+- Aux files to `~/.cache/latexmk/{parent-dir}-{jobname}/` via `-auxdir`, sharing
+  vimtex's incremental-build database; the PDF lands next to the source. No
+  `latexmk -c` (the `.fdb_latexmk` database is worth keeping).
+- **capo axis** — `wants_capo_pair()` + `compile_concert()` injects
+  `\def\ConcertVariant{true}` (forced `-g`); `build_song()` routes `Song.pdf`→
+  concert, `Song-CAPO.pdf`→native shapes.
+- **transpose axis** — `wants_transpose_pair()` + `compile_original_key()` injects
+  `\def\SongTranspose{0}` (forced `-g`) for `Song-OriginalKey.pdf`.
+- **chords variant** — `compile_variant()` injects `\def\Variant{chords}` (forced
+  `-g`), producing `Song--chords.pdf`. The `.sty` honours `\Variant` via two
+  parallel families: every lyric verse type (`verse`, `chorus`, …) has a **chart
+  twin** `<type>chords` (`versechords`, `choruschords`, …), each a real
+  `\newversetype` whose default `template=` is its counterpart's coloured box. In
+  the chords build the lyric types are suppressed and the twins render; in every
+  other build the twins are suppressed and the lyric types render. Suppression is
+  the same xparse `+b` swallow as before (no throwaway box, no warnings). **Both**
+  lists in the `.sty` must stay complete — a missing lyric type leaks lyrics into
+  the chords sheet, a missing twin leaks a chart into the lyric sheet. Because the
+  twin is a real verse type it reproduces its counterpart's colour *and* label
+  (`V1:`/`C1:`/`In:`) automatically. Verified on `samples/ChordsVariantDemo.song`.
+
+**Pending:** the `lyrics` and `phone` variants; folding the chords/lyrics axis
+together with the capo/transpose axes (e.g. `Song--chords-CAPO.pdf` — not wired
+up, since `read_variants` runs off the default-pitch source after the
+capo/transpose branch). The `-CAPO`/`-OriginalKey` (single-hyphen, *different
+musical content*) vs `--chords`/`--lyrics` (double-hyphen, *different presentation*)
+suffix split is the convention to preserve when that cross-product is built.
+
+## Future work — output variants from one `.song`
+
+The reference produced several PDFs from one source via a tangle of `\newtoggle`
+flags that cross-set each other (`LyricsWithChords`, `LyricsNoChords`,
+`ChordProgression`, `ChordsAndLyrics`, `SmallLyrics`, `Structure`) and four
+content-gating macros (`\chords`, `\lyrics`, `\lyricswithchords`, `\structure`),
+each `\iftoggle{…}{#1}{\@gobble{#1}}`. The cost landed in the `.song`: the same
+material was typed 3–4× per section, once per variant. The overhaul should reach
+the same outputs with far less duplication. Planned variants:
+
+1. **Default — lyrics + chords.** The `^{C}word` lyric body. Baseline. *Done.*
+2. **Lyrics-only.** *Pending — simple:* the **same** `^{C}word` body with
+   leadsheets' `print-chords=false`. No duplication — one body serves both 1 and 2.
+3. **Chart-only (no lyrics) — DONE, the `chords` variant.** A **separate** body
+   built with `\measures` inside per-type chart twins `\begin{versechords}` …
+   (see *compile-songs — status*).
+   The `.song` carries a chord skeleton in addition to the lyric body — i.e. some
+   "duplication", **but that's a feature, not a bug**: "hide the lyrics" is both
+   technically difficult *and* would produce garbage. There is no `print-lyrics`
+   key in leadsheets, and chords routinely change **mid-bar and mid-word**
+   (~80% of the cover corpus, e.g. `M^{B7b9}E`), so the chord position over the
+   lyric carries information that can't be cleanly stripped. Auto-extraction
+   would be a fragile parser over lyric token-soup (`\ul{}`, `\ssp`, math, bare
+   letters); the reference hand-wrote the chart for exactly this reason. The
+   chord skeleton is short, and it's the representation a band actually wants.
+4. **Phone-format.** *Pending.* Long-paper geometry (tall narrow page), otherwise
+   the default lyrics + chords layout. (Reference: `\Longpaper`.)
+
+Variant selection is a single `\def\Variant{…}` command-line flag (injected by
+`compile-songs`) reduced to **one** clean variant state in the `.sty`, not the
+reference's six cross-set toggles — realised for `chords`; the same lever extends
+to `lyrics`/`phone`.
+
+The **Reference's `Structure` option is abandoned** — not being carried forward.
+
+Possible **class option for grayscale** for any variant (phone excepted, but no
+strong reason either way) — for B&W printing, mirroring the reference's
+`\BlackAndWhite` branch that swapped tinted section boxes for ruled ones.
+
+### `.song` API — parallel section environments (DONE)
+
+**Implemented.** The `chords` variant uses **per-type parallel environments**: the
+lyric body stays in `verse`/`chorus`/…, and the chart goes in a parallel twin
+`<type>chords` (`versechords`, `choruschords`, `introchords`, …). The active
+variant prints exactly one family; the other's bodies are swallowed (xparse `+b`).
+Usage:
+
+    \begin{verse}[template=versebox]
+      ... ^{C}word lyric body — prints in lyrics+chords and lyrics-only ...
+    \end{verse}
+    \begin{versechords}
+      ... \measures chart body — prints in chart-only ...
+    \end{versechords}
+
+Each twin is a real `\newversetype` whose **default** `template=` is its
+counterpart's coloured box (`versechords` → `versebox`), so it needs **no
+`[template=]`** in the `.song` and reproduces the lyric section's colour *and*
+label (`V1:`/`C1:`/`In:`) automatically — the labels line up section-for-section
+because the sections are authored in parallel. `choruschords` deliberately drops
+chorus's italic (it takes the global upright/bold `verses-format`). Defined in the
+`.sty`'s "Output variant: chords" block: the `\newversetype` table, a
+`\setleadsheets` block mirroring the labels, and the two suppression `clist`s.
+(Naming chosen `<type>chords` over the earlier `chartverse` sketch.)
+
+**Naming convention** — adding a section type to the corpus now means adding *both*
+the lyric type (top of `.sty`) and its `<type>chords` twin (chords block), and
+listing each in its suppression `clist`. `\RenewDocumentEnvironment` errors on a
+missing name, so a half-added type fails loudly rather than silently leaking.
+
+**Still pending on this axis:** a per-section `minmeasure=3cm` option (set *that*
+section's measure floor, overriding the global `\minmeasure` — the clean
+declarative lever for roomier chart bars, preferred over the per-measure `\mw`
+hack below); it would be a new key on the twin types, not yet wired up.
+
+A third case rounds this out: **instrumental sections that should appear
+identically in both the lyric and chart outputs** — a solo, intro, outro, or
+break whose body is just a chord progression with no lyrics. Rather than
+duplicate them into a `solo` + `solochords` pair (as the demo currently does for
+`intro`/`introchords`), mark the single environment to appear in both:
+
+    \begin{solo}[both]
+      \measures{ ... }   % shown in lyrics+chords AND in the chart
+    \end{solo}
+
+This works precisely *because* such a body is already chart-shaped (a
+`\measures` line of `_{C}` chords, no stacked `^{C}word` lyrics), so the same
+content renders correctly in both contexts. `[both]` is therefore meaningful
+**only** for lyric-free, chart-compatible bodies — it is *not* a way to show a
+lyric verse in the chart (that's the whole reason charts are a separate body).
+
+Two things to decide when building `[both]`:
+
+- **Behaviour in the lyrics-only variant.** A chord-only solo has nothing left
+  once chords are suppressed. Options: omit the section, leave it blank, or show
+  a short note (the reference used `\notebox{8 bar solo}` here).
+- **The token name.** With three variants, `[both]` presumes the
+  lyrics+chords/chart pair specifically; a clearer token (e.g. `[shared]`, or an
+  explicit `[in=lyrics,chart]` form that scales to any subset) may read better.
+
+### Chart-only body — desired capabilities
+
+The chart builder (extending `\measures`) should support:
+
+- **Repeat / beat markers centered in the bar**, e.g. `*` or `/` for "play the
+  same chord on this beat" (a bar like `| Em / / / |`).
+- **Multi-chord bars** with beat positions, e.g. `| Em * Am Bm |` where `*`
+  marks beat 2, etc. — i.e. several chords laid out across the bar's beats.
+- **Barline alignment across lines** wherever possible: bar N at the same
+  horizontal position on every line of a section. This is the harder
+  fixed-width / `tabular`-column feature already flagged in *Known issues* (the
+  current `\measures` guarantees only a *minimum* spacing, not an aligned grid).
+  For a chart specifically, an aligned grid is more important than for the lyric
+  body, so this is where that feature would first earn its complexity.
+  - The proper, *non-hacky* route is a real `tabular`/`array` grid for the
+    section: each measure a cell, bars drawn inside cells (since repeat/final
+    bars vary per row, `tabular`'s fixed column rules can't do them). The column
+    algorithm then sizes each column to its **widest cell across all lines** —
+    note this is *better* than "match line 1", which would clip a later line
+    whose bar happens to be wider. Real complications to expect: per-row bar
+    styles, ragged measure counts (`\multicolumn`), and "min-width but grow"
+    columns (a `p{}` floor + auto-grow needs a `varwidth`/measuring trick).
+
+- **Per-measure width override `\mw{<dim>}` — implemented, tested clean, then
+  reverted** (a bit hacky/un-tex-y for routine use; kept here as a proven escape
+  hatch). Used inside a measure group to stretch one bar past `\minmeasure`,
+  e.g. `{\mw{2.4cm}_{G}}` or `{\mw{2\minmeasure}_{G}}`. Still a *minimum* (wider
+  content keeps natural width). Mechanism if revived: `\NewDocumentCommand\mw{m}`
+  sets a **global** flag + dim (global so it survives the `\hbox_set` group that
+  measures the content) and emits no ink; `\__myls_measurebox` resets the flag
+  before measuring, then uses the override as the box's min target when set. It's
+  the manual lever for one-off stretches; the per-section `minmeasure=` option
+  and a real grid (above) are the cleaner answers for the systematic case.
+

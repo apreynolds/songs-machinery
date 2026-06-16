@@ -6,27 +6,39 @@
 
 \begin{song}[]{title={Chords Variant Demo}, band={Test}, tempo={120}, key = {Em}}
 
+  % Each section is authored as a pair: the lyric body in verse/chorus/intro/...
+  % and the chart body in its <type>chords twin.  The default build prints the
+  % lyric bodies; the chords variant prints the twins, each in the SAME coloured
+  % box and with the SAME label (In:/V1:/C1:/Out:) as its lyric counterpart.
+
   \begin{intro}[template=introbox]
     \measures[repeat]{{_{Em}}{_{D}}{_{Em}}{_{Em}}}
   \end{intro}
+  \begin{introchords}
+    \measures[repeat]{{_{Em}}{_{D}}{_{Em}}{_{Em}}}
+  \end{introchords}
 
   \begin{verse}[template=versebox]
     ^{Em}THIS is a lyric ^{D}line with chords \\
     ^{G}over the ^{C}words to be hidden
   \end{verse}
+  \begin{versechords}
+    \measures{{^{Em}}{^{D}}{^{G}}{^{C}}}
+  \end{versechords}
 
   \begin{chorus}[template=chorusbox]
     ^{Em}FIRE, said the ^{D}man with the gun
   \end{chorus}
-
-  \begin{chordbox}
-    \measures{{^{Em}}{^{D}}{^{G}}{^{C}}} \\
-    \measures[repeat]{{^{Em}}{^{D}}{^{Em}}{^{Em}}}
-  \end{chordbox}
+  \begin{choruschords}
+    \measures{{^{Em}}{^{D}}}
+  \end{choruschords}
 
   \begin{outro}[template=outrobox]
     ^{Em}fading ^{D}out
   \end{outro}
+  \begin{outrochords}
+    \measures[final]{{^{Em}}{^{D}}}
+  \end{outrochords}
 
 \end{song}
 
