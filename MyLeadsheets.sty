@@ -307,38 +307,80 @@
 \fi
 
 % ---------------------------------------------------------------------------
-% Output variant: chords-only  (--chords)
+% Output variant: chords  (--chords)  -- parallel chart sections
 % ---------------------------------------------------------------------------
-% The chords variant prints a chord chart in place of the lyric body.  It is
-% selected by compile-songs injecting `\def\Variant{chords}' on the command line
-% before \input; the \providecommand below makes the ordinary build's \Variant
-% resolve to "default".  (Same injection pattern as the capo/transpose axes.)
+% The chords variant prints a chord CHART in place of the lyric body, section by
+% section, so the two sheets stay structurally identical.  It is selected by
+% compile-songs injecting `\def\Variant{chords}' before \input; the
+% \providecommand below makes the ordinary build's \Variant resolve to "default".
+% (Same injection pattern as the capo/transpose axes.)
 %
-% Two mirrored halves, so exactly one of {lyric verse types, chordbox} prints
-% per variant:
-%   * chordbox -- the environment that carries the chart (\measures lines).  It
-%     prints ONLY in the chords variant.  In every other variant its body is
-%     collected as an xparse `b' (body) argument and simply never used, so it is
-%     discarded silently -- no throwaway \vbox, hence no under/overfull warnings,
-%     and no leadsheets internals.
-%   * In the chords variant, conversely, every lyric-bearing verse type (verse,
-%     chorus, ...) is suppressed the same way -- redefined to swallow its body
-%     via `+b' -- so only chordbox bodies survive.
+% Every lyric section type has a parallel CHART TWIN named <type>chords
+% (versechords, choruschords, ...).  Each twin is a real leadsheets verse type
+% (\newversetype), so it inherits the documented template + auto-numbered-label
+% machinery instead of reinventing it:
+%   * its DEFAULT template is its counterpart's coloured box (versechords ->
+%     versebox), so the chart shares the lyric section's colour and the .song
+%     writes a bare \begin{versechords} -- no [template=] needed;
+%   * it carries its own counter and the same label scheme (V1:/C1:/In:), so the
+%     labels line up section-for-section across the two sheets when the lyric and
+%     chart bodies are authored in parallel.
+% The twin's body is the \measures chart (vs. the lyric body in verse/chorus/...).
 %
-% NB the verse-type list below must name every type defined above (the leadsheets
-% built-ins, the class's prechorus, and our \newversetype additions); a type
-% missing here would still print its lyrics in the chords sheet.  \RenewDoc...
-% errors if a listed type does not exist, so the list and the definitions above
-% stay honest with each other.
+% Exactly one family renders per build; the other family's environments are
+% redefined to swallow their body (xparse `+b') -- the unused body produces no
+% output and no box, hence no under/overfull warnings and no leadsheets
+% internals.  In the chords build the lyric types are swallowed; in every other
+% build the chart twins are swallowed.  Both lists below must stay complete: a
+% lyric type missing from the first leaks its lyrics into the chords sheet; a
+% twin missing from the second leaks its chart into the lyric sheet.
+% \RenewDocumentEnvironment errors on a non-existent name, keeping the lists
+% honest against the definitions here.
+
+% --- define the chart twins (always; suppressed on the wrong side below) ------
+% The [template=...] option sets each twin's *default* template, so the .song
+% needs no per-instance [template=].
+\newversetype{versechords}      [template=versebox]
+\newversetype{choruschords}     [template=chorusbox]
+\newversetype{introchords}      [template=introbox]
+\newversetype{outrochords}      [template=outrobox]
+\newversetype{interludechords}  [template=interludebox]
+\newversetype{bridgechords}     [template=bridgebox]
+\newversetype{solochords}       [template=solobox]
+\newversetype{prechoruschords}  [template=prechorusbox]
+\newversetype{postchoruschords} [template=postchorusbox]
+\newversetype{liftchords}       [template=liftbox]
+\newversetype{custompartchords} [template=custompartbox]
+
+% --- mirror each twin's label onto its lyric counterpart ----------------------
+% Same scheme as the lyric label block above: numbered twins reuse the one-letter
+% prefix, named twins reuse the short name, so the labels match section for
+% section.  choruschords deliberately does NOT inherit chorus's italic -- it
+% takes the global (upright, bold) verses-format, like every other chart.
+\setleadsheets{
+  versechords/named=false,  versechords/numbered=true,  versechords/after-label=: ,
+  choruschords/named=false, choruschords/numbered=true, choruschords/after-label=: ,
+  introchords/name=In ,
+  outrochords/name=Out ,
+  interludechords/name=I/L ,
+  bridgechords/name=Br ,
+  solochords/name=S ,
+  prechoruschords/name=Pr ,
+  postchoruschords/name=Po ,
+  liftchords/name=L ,
+  custompartchords/name=Part ,
+}
+\renewcommand\theversechords{V\arabic{versechords}}
+\renewcommand\thechoruschords{C\arabic{choruschords}}
+
+% --- select which family renders ----------------------------------------------
 \providecommand\Variant{default}
 \def\MyLSchordsflag{chords}
 \newif\ifMyLSchords
 \ifx\Variant\MyLSchordsflag \MyLSchordstrue \else \MyLSchordsfalse \fi
-
+\ExplSyntaxOn
 \ifMyLSchords
-  % chords variant: chordbox prints its body; lyric verse types are discarded.
-  \NewDocumentEnvironment{chordbox}{O{}}{\par}{\par}
-  \ExplSyntaxOn
+  % chords build: lyric types swallow their body; chart twins render.
   \clist_map_inline:nn
     {
       verse, verse*, chorus, chorus*, intro, intro*, outro, interlude,
@@ -346,11 +388,17 @@
       lift, postchorus, custompart
     }
     { \RenewDocumentEnvironment {#1} { O{} +b } {} {} }
-  \ExplSyntaxOff
 \else
-  % every other variant: chordbox is discarded; lyric verse types untouched.
-  \NewDocumentEnvironment{chordbox}{O{} +b}{}{}
+  % every other build: chart twins swallow their body; lyric types render.
+  \clist_map_inline:nn
+    {
+      versechords, choruschords, introchords, outrochords, interludechords,
+      bridgechords, solochords, prechoruschords, postchoruschords,
+      liftchords, custompartchords
+    }
+    { \RenewDocumentEnvironment {#1} { O{} +b } {} {} }
 \fi
+\ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
 % Song title / header
