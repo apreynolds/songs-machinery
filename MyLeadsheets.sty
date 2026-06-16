@@ -251,12 +251,12 @@
   \end{tikzpicture}%
 }
 \newcommand\leadinto[1]{%
-  \MyLSleadarrow\,%
+  \MyLSleadarrow%
   \begin{tikzpicture}[baseline=(w.base)]
     \node[inner sep=0pt,anchor=base,transform shape,xslant=\MyLSleadslant]
       (w) at (0,0) {\small\itshape #1} ;
   \end{tikzpicture}%
-  \,\MyLSleadarrow
+  \MyLSleadarrow
 }
 
 % ---------------------------------------------------------------------------
