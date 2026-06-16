@@ -660,19 +660,26 @@
 % One-line header "Title (Band) Tempo Key" (key in brick-red), replacing the
 % class default of "Title" + a second "as played by: ..., key: ..." line.
 % \definesongtitletemplate is the documented mechanism.
+% The header is a real \section (not \section*), so in a songbook it is picked
+% up automatically by \tableofcontents -- and the TOC line carries the full,
+% richly formatted header (key, tuning, tempo, ...), which is the whole point of
+% reusing the heading as the TOC text.  Under hyperref the section also seeds a
+% PDF bookmark, but a bookmark is a plain string: the spacing/content macros in
+% the header (\quad, \hfill, \fixedchord inside key=, \MyLSformattuning, ...) are
+% not valid there and would each log a "Token not allowed" warning (the font
+% commands -- \large, \sffamily, ... -- hyperref strips silently).  So the entire
+% heading is wrapped in one \texorpdfstring: the FIRST (rich) branch is what gets
+% typeset and written to the TOC; the SECOND branch is a clean, hand-written
+% string (title, band) that hyperref uses for the bookmark.  Nothing inside the
+% rich branch needs individual wrapping -- it never reaches the PDF string.
+%
+% \texorpdfstring is hyperref's.  Song sheets that don't load hyperref still need
+% \section to work, so provide a no-op fallback (first branch wins) at
+% begin-document -- after all packages have loaded, so \providecommand sees the
+% real macro when hyperref IS present and stays quiet (no "Redefining" log line).
+\AtBeginDocument{\providecommand\texorpdfstring[2]{#1}}
 \definesongtitletemplate{mytitle}{%
-  % Add a TOC entry (and, under hyperref, a PDF bookmark/anchor) for each song,
-  % so a songbook's \tableofcontents lists every title.  The header itself stays
-  % a \section* (unnumbered, no auto TOC entry), so we add the line by hand.
-  % Guards: \addcontentsline is base LaTeX (writes an unused .toc when there is
-  % no \tableofcontents -- harmless); \phantomsection is hyperref-only, so it is
-  % called only when defined, keeping single-song sheets (no hyperref) clean.
-  \ifcsname phantomsection\endcsname\phantomsection\fi
-  \addcontentsline{toc}{section}{%
-    \songproperty{title}%
-    \ifsongproperty{band}{\space(\songproperty{band})}{}%
-  }%
-  \section*{%
+  \section{\texorpdfstring{%
     \ifsongproperty{difficulty}{\songproperty{difficulty}\space}{}%
     \large\sffamily\songproperty{title}\space\mdseries
     \ifsongproperty{band}{(\songproperty{band})}{}\normalsize\quad%
@@ -683,7 +690,10 @@
     \fi
     \ifsongproperty{tempo}{\space\itshape\songproperty{tempo}bpm\upshape}{}%
     \ifsongproperty{genre}{\hfill\textcolor{ForestGreen}{\songproperty{genre}}}{}%
-  }%
+  }{%
+    \songproperty{title}%
+    \ifsongproperty{band}{ (\songproperty{band})}{}%
+  }}%
 }
 \setleadsheets{ title-template = mytitle }
 
