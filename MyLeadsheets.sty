@@ -401,6 +401,43 @@
 \ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
+% Per-section \minmeasure override
+% ---------------------------------------------------------------------------
+% A `minmeasure' key on every section type, so one section can widen (or narrow)
+% its measure floor without disturbing the rest:
+%
+%   \begin{versechords}[minmeasure=3cm] ... \end{versechords}
+%
+% This matters most in chart (chords) sections, where wider bars line the
+% barlines up more evenly -- but it is available on the lyric types too (e.g. an
+% intro/outro built with \measures).  The override is automatically local: a
+% leadsheets section is a TeX group, and the key runs through the environment's
+% \keys_set inside that group, so \setlength reverts to the global \minmeasure
+% (set in the "Measures" block above) at \end.  Wider content still keeps its
+% natural width -- this only moves the *minimum*, exactly like \minmeasure.
+%
+% The key is added to the leadsheets/<type> path of every managed section type
+% (lyric types + their chart twins) via \keys_define -- additive and documented,
+% no private internals.  The helper is defined with \cs_new so the key-value
+% parameter (##1 -> #1 when the macro runs) stays unambiguous through the loop.
+\ExplSyntaxOn
+\cs_new_protected:Npn \__myls_add_minmeasure_key:n #1
+  {
+    \keys_define:nn {leadsheets/#1}
+      { minmeasure .code:n = { \setlength \minmeasure {##1} } }
+  }
+\clist_map_inline:nn
+  {
+    verse, chorus, intro, outro, interlude, bridge, solo,
+    prechorus, postchorus, lift, custompart,
+    versechords, choruschords, introchords, outrochords, interludechords,
+    bridgechords, solochords, prechoruschords, postchoruschords,
+    liftchords, custompartchords
+  }
+  { \__myls_add_minmeasure_key:n {#1} }
+\ExplSyntaxOff
+
+% ---------------------------------------------------------------------------
 % Song title / header
 % ---------------------------------------------------------------------------
 % One-line header "Title (Band) Tempo Key" (key in brick-red), replacing the

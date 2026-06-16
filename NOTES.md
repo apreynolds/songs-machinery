@@ -332,10 +332,18 @@ the lyric type (top of `.sty`) and its `<type>chords` twin (chords block), and
 listing each in its suppression `clist`. `\RenewDocumentEnvironment` errors on a
 missing name, so a half-added type fails loudly rather than silently leaking.
 
-**Still pending on this axis:** a per-section `minmeasure=3cm` option (set *that*
-section's measure floor, overriding the global `\minmeasure` — the clean
-declarative lever for roomier chart bars, preferred over the per-measure `\mw`
-hack below); it would be a new key on the twin types, not yet wired up.
+**Per-section `minmeasure=` — DONE.** `\begin{versechords}[minmeasure=3cm] …`
+sets *that* section's measure floor, overriding the global `\minmeasure`, then
+reverts at `\end` (a leadsheets section is a TeX group, and the key's `\setlength`
+runs through the environment's `\keys_set` inside that group). It's the clean
+declarative lever for roomier chart bars — preferred over the per-measure `\mw`
+hack below. Implemented in the `.sty`'s "Per-section `\minmeasure` override" block
+as a `minmeasure` key `\keys_define`d onto the `leadsheets/<type>` path of every
+managed section type (lyric types *and* chart twins, so it works on an
+`\measures`-bearing intro/outro too, not just charts). Wider content still keeps
+its natural width — the key moves only the *minimum*. Verified on
+`samples/ChordsVariantDemo.song` (`versechords[minmeasure=3cm]` widens V1's bars;
+C1/Out revert).
 
 A third case rounds this out: **instrumental sections that should appear
 identically in both the lyric and chart outputs** — a solo, intro, outro, or

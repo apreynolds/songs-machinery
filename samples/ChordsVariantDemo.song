@@ -22,7 +22,7 @@
     ^{Em}THIS is a lyric ^{D}line with chords \\
     ^{G}over the ^{C}words to be hidden
   \end{verse}
-  \begin{versechords}
+  \begin{versechords}[minmeasure=3cm]   % wider bars here only; reverts after
     \measures{{^{Em}}{^{D}}{^{G}}{^{C}}}
   \end{versechords}
 
