@@ -697,6 +697,36 @@
 }
 \setleadsheets{ title-template = mytitle }
 
+% Song headings are \section, so they carry a number by default ("1 Title ...").
+% Song sheets never want a numbered header, so drop the number everywhere with
+% secnumdepth=0: the heading and its TOC line lose the leading number, but the
+% song still appears in a songbook's TOC and bookmarks (that is governed by
+% tocdepth, not secnumdepth).
+\setcounter{secnumdepth}{0}
+
+% Drop the page number from each TOC line (songbook only -- a single sheet has no
+% TOC).  KOMA's section TOC entry uses the documented `section' entry style with
+% a `pagenumberformat' command-option.  Its value is treated as a COMMAND applied
+% to the page number, so an empty value ({}) still prints the number ({}{<n>}); a
+% one-arg "discard" command drops it instead.  KOMA re-tokenises the stored value
+% with the catcodes in force when the TOC is typeset (where @ is NOT a letter),
+% so the kernel's \@gobble can't be used here -- its @ would print as text.
+% Hence this @-free gobbler.  KOMA-native, no \l@section hack.
+\newcommand*\MyLSgobblepagenumber[1]{}
+% linefill=\hfil too: KOMA inserts a `linefill' (here a plain \hfill -- section
+% TOC entries have no dot leaders) between the entry text and the page number.
+% That is a SECOND \hfill alongside the one the title template uses to push
+% `genre' right, so the two split the space and genre lands mid-line.  We can't
+% just drop the linefill: KOMA needs *some* line-end fill, or genre-less entries
+% get justified (inter-word spread).  Instead make the linefill a weaker order of
+% infinity, \hfil (1fil) vs the template's \hfill (1fill): with a genre present
+% its \hfill wins all the stretch so genre is flush right and the \hfil collapses;
+% with no genre the lone \hfil still absorbs the slack, keeping the line ragged.
+% pagenumberwidth=0pt: with the page number gobbled, KOMA still reserves a box of
+% width \@pnumwidth on the right, which insets genre ~22pt from the text margin;
+% zeroing it lets genre reach the true right edge (matching the on-page heading).
+\DeclareTOCStyleEntry[pagenumberformat=\MyLSgobblepagenumber,linefill=\hfil,pagenumberwidth=0pt]{section}{section}
+
 % No running header and no page numbers.  The class (via scrlayer-scrpage) puts
 % the song title in the page header (pages 2+) and a "page X of Y" line in the
 % footer; \clearpairofpagestyles wipes every head/foot slot of the scrheadings
