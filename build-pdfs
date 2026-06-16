@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# compile-songs — compile .song files into their default song-sheet PDFs
-# Usage: compile-songs [SONG.song ...]
+# build-pdfs — compile .song files into their default song-sheet PDFs
+# Usage: build-pdfs [SONG.song ...]
 #
 # With no arguments, compiles every *.song file in the current directory.
 # For each source it produces SONG.pdf alongside the source (the default
@@ -214,7 +214,7 @@ build_song() {
           echo "    + $jobname--$variant.pdf ($variant)"
           ;;
         *)
-          echo "compile-songs: variant '$variant' not yet supported, skipping" >&2
+          echo "build-pdfs: variant '$variant' not yet supported, skipping" >&2
           ;;
       esac
     done
@@ -231,7 +231,7 @@ else
 fi
 
 if [[ ${#songs[@]} -eq 0 ]]; then
-  echo "compile-songs: no .song files found" >&2
+  echo "build-pdfs: no .song files found" >&2
   exit 1
 fi
 
@@ -239,19 +239,19 @@ failed=()
 
 for song in "${songs[@]}"; do
   if [[ ! -f $song ]]; then
-    echo "compile-songs: skipping '$song' (not a file)" >&2
+    echo "build-pdfs: skipping '$song' (not a file)" >&2
     failed+=("$song")
     continue
   fi
 
   echo "==> $song"
   if ! build_song "$song"; then
-    echo "compile-songs: FAILED on '$song'" >&2
+    echo "build-pdfs: FAILED on '$song'" >&2
     failed+=("$song")
   fi
 done
 
 if [[ ${#failed[@]} -gt 0 ]]; then
-  echo "compile-songs: ${#failed[@]} of ${#songs[@]} failed: ${failed[*]}" >&2
+  echo "build-pdfs: ${#failed[@]} of ${#songs[@]} failed: ${failed[*]}" >&2
   exit 1
 fi
