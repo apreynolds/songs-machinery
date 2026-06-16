@@ -663,14 +663,15 @@
 \definesongtitletemplate{mytitle}{%
   \section*{%
     \ifsongproperty{difficulty}{\songproperty{difficulty}\space}{}%
-    \large\sffamily\songproperty{title}\space\normalsize\mdseries
-    \ifsongproperty{band}{(\songproperty{band})}{}%
-    \ifsongproperty{tempo}{\space\songproperty{tempo}bpm}{}%
-    \ifsongproperty{key}{\space\space\songproperty{key}}{}%
+    \large\sffamily\songproperty{title}\space\mdseries
+    \ifsongproperty{band}{(\songproperty{band})}{}\normalsize\quad%
+    \ifsongproperty{key}{\space\songproperty{key}}{}%
+    \ifsongproperty{tuning}{\space{(\MyLSformattuning{\songproperty{tuning}})}}{}%
     \ifMyLSconcert\else
       \ifsongproperty{capo}{\nobreakspace\notebox{capo \songproperty{capo}}}{}%
     \fi
-    \ifsongproperty{tuning}{\space{(\MyLSformattuning{\songproperty{tuning}})}}{}%
+    \ifsongproperty{tempo}{\space\itshape\songproperty{tempo}bpm\upshape}{}%
+    \ifsongproperty{genre}{\texorpdfstring{\hfill\textcolor{ForestGreen}{\songproperty{genre}}}{}}{}%
   }%
 }
 \setleadsheets{ title-template = mytitle }
