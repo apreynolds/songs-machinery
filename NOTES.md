@@ -82,7 +82,7 @@ for when the mechanism itself needs touching.
 ### Capo variants
 
 Working end-to-end for `samples/Uberlin.song` (concert source, `key={Gm}`,
-`capo=3`): `compile-songs` produces `Uberlin.pdf` (concert) and `Uberlin-CAPO.pdf`
+`capo=3`): `build-pdfs` produces `Uberlin.pdf` (concert) and `Uberlin-CAPO.pdf`
 (Em shapes + "capo 3" note), both showing key Gm. Leans on leadsheets' *native*
 capo handling rather than hand-driven transposition — far simpler than the earlier
 `\CapoSetup`/`\SongCapo`/5-variant-table sketch it replaces.
@@ -106,7 +106,7 @@ capo handling rather than hand-driven transposition — far simpler than the ear
   needed to render a ♯/♭ glyph in a key like `F#m`, and is still unported.
 
 **The concert-pitch sibling** (e.g. for a bass player) is produced by
-`compile-songs` when the song carries `%! capo-pair`. With it the script builds
+`build-pdfs` when the song carries `%! capo-pair`. With it the script builds
 **two** PDFs: `Song.pdf` = concert and `Song-CAPO.pdf` = capo shapes. The concert
 one injects `\def\ConcertVariant{true}` before `\input` (a `-pdflatex` override
 **forced with `latexmk -g`**, since the injected `\def` doesn't change the source
@@ -117,7 +117,7 @@ native build under `-jobname=Song-CAPO`.
 
 - **`capo=N` property** — single source of truth for the fret (and, alone, gives
   the capo-shapes sheet via pure leadsheets — no script needed).
-- **`%! capo-pair` magic comment** — boolean; asks `compile-songs` for the
+- **`%! capo-pair` magic comment** — boolean; asks `build-pdfs` for the
   concert sibling too.
 - **`.sty`** (the "Capo variants" block) — `\providecommand\ConcertVariant{false}`
   + `\newif\ifMyLSconcert`; on the concert build (`\ConcertVariant` = `true`) it
@@ -126,7 +126,7 @@ native build under `-jobname=Song-CAPO`.
   suppresses the note. *Gotcha:* the flag is compared with `\ifx`, so the helper
   `\MyLSconcertflag` must be a plain `\def` (not `\newcommand`, which is `\long`
   and won't `\ifx`-match the injected non-long `\def`).
-- **`compile-songs`** — `wants_capo_pair()` reads the comment; `compile_concert()`
+- **`build-pdfs`** — `wants_capo_pair()` reads the comment; `compile_concert()`
   does the injected `-g` build; `build_song()` routes plain `Song.pdf`→concert and
   `Song-CAPO.pdf`→native shapes.
 
@@ -161,7 +161,7 @@ variant of *each* pitch).
 
 Original-key sibling, parallel to capo but for a *real* key change (the chords'
 sounding pitch moves, unlike capo's fingering shapes). Working for
-`samples/TransposeDemo.song` (transcribed in C, `transpose=2`): `compile-songs`
+`samples/TransposeDemo.song` (transcribed in C, `transpose=2`): `build-pdfs`
 produces `TransposeDemo.pdf` (chords in D) and `TransposeDemo-OriginalKey.pdf`
 (chords in C).
 
@@ -182,7 +182,7 @@ produces `TransposeDemo.pdf` (chords in D) and `TransposeDemo-OriginalKey.pdf`
   and its use; the `.song` owns the default (a bare/vimtex compile = transposed).
 - **`%! transpose-pair`** — boolean magic comment; asks for the original-key
   sibling too.
-- **`compile-songs`** — `wants_transpose_pair()`; default PDF = native transposed
+- **`build-pdfs`** — `wants_transpose_pair()`; default PDF = native transposed
   build; `compile_original_key()` injects `\def\SongTranspose{0}` (forced `-g`) for
   `SONG-OriginalKey.pdf`. **No `.sty` change at all** — leadsheets does the
   transposition.
@@ -216,9 +216,9 @@ packages) appear in the raw log but are invisible in the quickfix. When diagnosi
 warnings, check the raw log at `~/.cache/latexmk/{dirname}-{jobname}/` (vimtex
 compilations) or `~/.cache/latexmk/${project_name}_$hash/` (Generate* commands).
 
-## compile-songs — status
+## build-pdfs — status
 
-`compile-songs` (repo root, `~/repos/1sys/tex/songs/compile-songs`) compiles each
+`build-pdfs` (repo root, `~/repos/1sys/tex/songs/build-pdfs`) compiles each
 `.song` to its default PDF and reads magic comments in the **leading** comment
 block (first non-blank, non-`%` line ends the block, mirroring the TeX-engine
 magic comment) to build siblings. The script carries full inline comments; this
@@ -292,7 +292,7 @@ the same outputs with far less duplication. Planned variants:
    `^`/`_` split with no extra code. Verified on `samples/ChordsVariantDemo.song`.
 3. **Chart-only (no lyrics) — DONE, the `chords` variant.** A **separate** body
    built with `\measures` inside per-type chart twins `\begin{versechords}` …
-   (see *compile-songs — status*).
+   (see *build-pdfs — status*).
    The `.song` carries a chord skeleton in addition to the lyric body — i.e. some
    "duplication", **but that's a feature, not a bug**: "hide the lyrics" is both
    technically difficult *and* would produce garbage. There is no `print-lyrics`
@@ -306,7 +306,7 @@ the same outputs with far less duplication. Planned variants:
    the default lyrics + chords layout. (Reference: `\Longpaper`.)
 
 Variant selection is a single `\def\Variant{…}` command-line flag (injected by
-`compile-songs`) reduced to **one** clean variant state in the `.sty`, not the
+`build-pdfs`) reduced to **one** clean variant state in the `.sty`, not the
 reference's six cross-set toggles — realised for `chords` and `lyrics` (each a
 small `\newif`/`\ifx` block in the "select which family renders" section, plus the
 `print-chords` switch at the file end); `phone` extends the same lever.
