@@ -310,6 +310,38 @@
 \definesongproperty{difficulty}
 \definesongproperty{tuning}
 
+% \fixedchord{<chord>} — renders a chord name with leadsheets' symbol formatting
+% (# -> sharp symbol, b -> flat symbol, etc.) WITHOUT applying any transposition.
+%
+% Use case: the `key' song property, when you want to display the concert-pitch
+% key regardless of transpose= or capo= settings.  Example:
+%   key={\fixedchord{F#m}}
+%
+% Implementation note: transposition in \writechord is gated on two private
+% expl3 booleans in the leadsheets package:
+%   \l__leadsheets_transpose_bool       (set by transpose=N in \begin{song})
+%   \l__leadsheets_transpose_capo_bool  (set by capo=N in \begin{song})
+% We temporarily set both to false inside a group (expl3 \l__ variables are
+% local, so they are restored automatically when the group ends).
+%
+% WARNING — private API: these variable names are internal to leadsheets
+% (double-underscore prefix).  If leadsheets is ever updated and renames or
+% restructures them, this macro will silently stop suppressing transposition
+% (or may cause an error).  The leadsheets package appears unmaintained as of
+% 2025, so the risk is low, but check this macro if leadsheets is ever updated.
+% The relevant source is leadsheets.library.chords.code.tex,
+% \__leadsheets_chord_write:n.
+\ExplSyntaxOn
+\NewDocumentCommand \fixedchord { m }
+{
+  \group_begin:
+  \bool_set_false:N \l__leadsheets_transpose_bool
+  \bool_set_false:N \l__leadsheets_transpose_capo_bool
+  \writechord {#1}
+  \group_end:
+}
+\ExplSyntaxOff
+
 % ---------------------------------------------------------------------------
 % Measures: minimum bar spacing
 % ---------------------------------------------------------------------------
