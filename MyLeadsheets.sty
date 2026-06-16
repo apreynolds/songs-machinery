@@ -661,6 +661,17 @@
 % class default of "Title" + a second "as played by: ..., key: ..." line.
 % \definesongtitletemplate is the documented mechanism.
 \definesongtitletemplate{mytitle}{%
+  % Add a TOC entry (and, under hyperref, a PDF bookmark/anchor) for each song,
+  % so a songbook's \tableofcontents lists every title.  The header itself stays
+  % a \section* (unnumbered, no auto TOC entry), so we add the line by hand.
+  % Guards: \addcontentsline is base LaTeX (writes an unused .toc when there is
+  % no \tableofcontents -- harmless); \phantomsection is hyperref-only, so it is
+  % called only when defined, keeping single-song sheets (no hyperref) clean.
+  \ifcsname phantomsection\endcsname\phantomsection\fi
+  \addcontentsline{toc}{section}{%
+    \songproperty{title}%
+    \ifsongproperty{band}{\space(\songproperty{band})}{}%
+  }%
   \section*{%
     \ifsongproperty{difficulty}{\songproperty{difficulty}\space}{}%
     \large\sffamily\songproperty{title}\space\mdseries
