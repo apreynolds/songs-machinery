@@ -14,11 +14,12 @@
 #     %! variants: chords, lyrics
 #
 # Each listed variant produces SONG--<variant>.pdf, built by injecting
-# \def\Variant{<variant>} so MyLeadsheets.sty selects that variant's bodies (the
-# chords variant prints chordbox charts and suppresses the lyric verse types).
-# Only `chords' is wired up so far; see compile_variant(). The magic comment must
-# sit in the leading comment block, before \documentclass (TeX magic-comment
-# convention).
+# \def\Variant{<variant>} so MyLeadsheets.sty selects that variant's bodies: the
+# chords variant prints the chart twins and suppresses the lyric verse types; the
+# lyrics variant prints the lyric verse bodies with the chords stripped
+# (print-chords=false). `chords' and `lyrics' are wired up (see compile_variant());
+# `phone' is planned. The magic comment must sit in the leading comment block,
+# before \documentclass (TeX magic-comment convention).
 #
 # Capo (a separate axis): a song written in concert pitch with `capo=N' in its
 # \begin{song} properties builds, by default, to the capo-shapes sheet (chords
@@ -142,10 +143,10 @@ compile_original_key() {
     "$src"
 }
 
-# Build a presentation variant (e.g. chords) of a song: inject \def\Variant{NAME}
-# so MyLeadsheets.sty selects that variant's bodies (the chords variant prints
-# chordbox charts and suppresses the lyric verse types). Output is
-# SONG--NAME.pdf. Forced with -g for the same reason as compile_concert (the
+# Build a presentation variant (chords or lyrics) of a song: inject
+# \def\Variant{NAME} so MyLeadsheets.sty selects that variant's bodies (chords
+# prints the chart twins and suppresses the lyric types; lyrics prints the lyric
+# bodies with chords stripped). Output is SONG--NAME.pdf. Forced with -g (the
 # source is unchanged, so latexmk's up-to-date check would otherwise skip the
 # rebuild). The -pdflatex override mirrors the global latexmkrc invocation, with
 # the variant name interpolated into the injected \def (hence double quotes and
@@ -206,7 +207,7 @@ build_song() {
 
     for variant in $(read_variants "$base"); do
       case $variant in
-        chords)
+        chords | lyrics)
           varaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname--$variant"
           mkdir -p "$varaux" || exit
           compile_variant "$jobname" "$base" "$varaux" "$variant" || exit

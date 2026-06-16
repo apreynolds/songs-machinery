@@ -1,4 +1,4 @@
-%! variants: chords
+%! variants: chords, lyrics
 \documentclass[fontsize=14pt,DIV=calc]{leadsheet}
 \usepackage{MyLeadsheets}
 

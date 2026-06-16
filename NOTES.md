@@ -255,9 +255,14 @@ Magic comments (each axis independent):
   the chords sheet, a missing twin leaks a chart into the lyric sheet. Because the
   twin is a real verse type it reproduces its counterpart's colour *and* label
   (`V1:`/`C1:`/`In:`) automatically. Verified on `samples/ChordsVariantDemo.song`.
+- **lyrics variant** — same `compile_variant()` path (the `case` arm is just
+  `chords | lyrics`), injecting `\def\Variant{lyrics}` for `Song--lyrics.pdf`. The
+  `.sty` flips `print-chords=false` for this variant only; the family selection is
+  the same as the default build (lyric bodies print, chart twins swallowed). See
+  *Variants from one `.song`* item 2 for the `^`/`_` detail.
 
-**Pending:** the `lyrics` and `phone` variants; folding the chords/lyrics axis
-together with the capo/transpose axes (e.g. `Song--chords-CAPO.pdf` — not wired
+**Pending:** the `phone` variant; folding the chords/lyrics axis together with the
+capo/transpose axes (e.g. `Song--chords-CAPO.pdf` — not wired
 up, since `read_variants` runs off the default-pitch source after the
 capo/transpose branch). The `-CAPO`/`-OriginalKey` (single-hyphen, *different
 musical content*) vs `--chords`/`--lyrics` (double-hyphen, *different presentation*)
@@ -274,8 +279,17 @@ material was typed 3–4× per section, once per variant. The overhaul should re
 the same outputs with far less duplication. Planned variants:
 
 1. **Default — lyrics + chords.** The `^{C}word` lyric body. Baseline. *Done.*
-2. **Lyrics-only.** *Pending — simple:* the **same** `^{C}word` body with
+2. **Lyrics-only — DONE, the `lyrics` variant.** The **same** `^{C}word` body with
    leadsheets' `print-chords=false`. No duplication — one body serves both 1 and 2.
+   Selected by `\def\Variant{lyrics}`; renders the same family as the default build
+   (lyric types print, chart twins swallowed) and only flips `print-chords`. Key
+   detail: `print-chords=false` suppresses **only** `^{C}word` chords (`^` =
+   `\getorprintchord`, gated by `print-chords` in `\leadsheets_place_above`); the
+   `_{C}` chord-only tokens in `\measures` go through `\writechord` and print
+   regardless (`songs.code.tex:143-144`). So lyric sections become words-only while
+   instrumental sections (a `\measures` line of `_{C}` chords, no `^{}word`) keep
+   their progression — the sensible outcome, and it falls out of the documented
+   `^`/`_` split with no extra code. Verified on `samples/ChordsVariantDemo.song`.
 3. **Chart-only (no lyrics) — DONE, the `chords` variant.** A **separate** body
    built with `\measures` inside per-type chart twins `\begin{versechords}` …
    (see *compile-songs — status*).
@@ -293,8 +307,9 @@ the same outputs with far less duplication. Planned variants:
 
 Variant selection is a single `\def\Variant{…}` command-line flag (injected by
 `compile-songs`) reduced to **one** clean variant state in the `.sty`, not the
-reference's six cross-set toggles — realised for `chords`; the same lever extends
-to `lyrics`/`phone`.
+reference's six cross-set toggles — realised for `chords` and `lyrics` (each a
+small `\newif`/`\ifx` block in the "select which family renders" section, plus the
+`print-chords` switch at the file end); `phone` extends the same lever.
 
 The **Reference's `Structure` option is abandoned** — not being carried forward.
 

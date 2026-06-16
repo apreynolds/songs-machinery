@@ -374,10 +374,17 @@
 \renewcommand\thechoruschords{C\arabic{choruschords}}
 
 % --- select which family renders ----------------------------------------------
+% \Variant is one of: default, chords, lyrics (phone planned).  Only `chords'
+% renders the chart twins; `lyrics' and `default' both print the lyric bodies and
+% swallow the twins -- they differ only in print-chords (set near the file end):
+% `lyrics' additionally suppresses the ^{C} chords, leaving words alone.
 \providecommand\Variant{default}
 \def\MyLSchordsflag{chords}
 \newif\ifMyLSchords
 \ifx\Variant\MyLSchordsflag \MyLSchordstrue \else \MyLSchordsfalse \fi
+\def\MyLSlyricsflag{lyrics}
+\newif\ifMyLSlyrics
+\ifx\Variant\MyLSlyricsflag \MyLSlyricstrue \else \MyLSlyricsfalse \fi
 \ExplSyntaxOn
 \ifMyLSchords
   % chords build: lyric types swallow their body; chart twins render.
@@ -462,4 +469,11 @@
 % pagestyle (and its plain variant) in one documented command.
 \clearpairofpagestyles
 
-\setleadsheets{ print-chords = true }
+% Chords print in every build except the lyrics variant, which strips the ^{C}
+% chords to leave the words alone (the only thing distinguishing it from the
+% default build -- see the variant-selection block above).
+\ifMyLSlyrics
+  \setleadsheets{ print-chords = false }
+\else
+  \setleadsheets{ print-chords = true  }
+\fi
