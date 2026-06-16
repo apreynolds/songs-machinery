@@ -341,6 +341,44 @@
   \group_end:
 }
 \ExplSyntaxOff
+% \MyLSformattuning{<value>} -- render a tuning's accidentals as proper glyphs,
+% with NO chord parsing and NO transposition.  Applied automatically by the title
+% template to \songproperty{tuning}, so a .song writes plain text -- tuning={Eb},
+% tuning={DADGAD}, tuning={drop D} -- with no wrapper macro to remember.
+%
+% Why NOT \writechord (the way \fixedchord handles the key)?  \writechord routes
+% through \chordname, which does two things we must avoid on a tuning:
+%   (a) it transposes by the song's transpose=/capo= amount -- but a tuning is a
+%       fixed fact about the instrument and must never move; and
+%   (b) it parses chord *quality* -- superscripting digits, turning a lone `o'
+%       into a diminished mark, `+' into aug, `(...)' into tensions.  Run over a
+%       descriptive tuning that mangles it: "drop D" -> "dr" + superscript-o
+%       + "p D", "open G" likewise.
+% So we bypass \chordname entirely and do ONLY the accidental substitution.
+%
+% This is safe precisely because note letters are uppercase (D A G B ...) while a
+% flat is a lowercase `b': replacing lowercase `b' -> \flat never touches a
+% B-note, and "drop"/"open"/"tuning" contain no lowercase b either.  \sharp and
+% \flat are leadsheets' own text-safe accidental glyphs (musicsymbols library) --
+% the same ones \writechord prints -- so a tuning matches the chords visually.
+%
+% \tl_set:Ne first expands \songproperty{tuning} to its stored value.  That value
+% was rescanned with `#' catcode-other when the property was set
+% (properties.code.tex, \leadsheets_set_property:nnn), so the sharp search must
+% match a catcode-other `#'; \c_hash_str is exactly that, and the Nen variant
+% expands it in the search position.  (No private leadsheets internals here -- a
+% notch cleaner than \fixedchord, which has to flip two \l__leadsheets_ booleans.)
+\ExplSyntaxOn
+\tl_new:N \l__myls_tuning_tl
+\cs_generate_variant:Nn \tl_replace_all:Nnn { Nen }
+\NewDocumentCommand \MyLSformattuning { m }
+  {
+    \tl_set:Ne \l__myls_tuning_tl {#1}
+    \tl_replace_all:Nen \l__myls_tuning_tl { \c_hash_str } { \sharp }
+    \tl_replace_all:Nnn \l__myls_tuning_tl { b } { \flat }
+    \tl_use:N \l__myls_tuning_tl
+  }
+\ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
 % Measures: minimum bar spacing
@@ -626,13 +664,13 @@
   \section*{%
     \ifsongproperty{difficulty}{\songproperty{difficulty}\space}{}%
     \large\sffamily\songproperty{title}\space\normalsize\mdseries
-    \ifsongproperty{band}{(\songproperty{band})\space}{}%
-    \ifsongproperty{tempo}{\songproperty{tempo}\space}{}%
-    \ifsongproperty{key}{\bfseries\textcolor{BrickRed}{\songproperty{key}}}{}%
+    \ifsongproperty{band}{(\songproperty{band})}{}%
+    \ifsongproperty{tempo}{\space\songproperty{tempo}bpm}{}%
+    \ifsongproperty{key}{\space\space\songproperty{key}}{}%
     \ifMyLSconcert\else
       \ifsongproperty{capo}{\nobreakspace\notebox{capo \songproperty{capo}}}{}%
     \fi
-    \ifsongproperty{tuning}{\space\small\songproperty{tuning}\normalsize}{}%
+    \ifsongproperty{tuning}{\space{(\MyLSformattuning{\songproperty{tuning}})}}{}%
   }%
 }
 \setleadsheets{ title-template = mytitle }
