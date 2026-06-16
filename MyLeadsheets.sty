@@ -168,10 +168,12 @@
 %       time-per-document deprecation warning (see \MyLSmydotwarning).  A clean
 %       (converted) song never triggers it, so the no-warnings goal is intact
 %       for current work; convert legacy \mydot uses to \measures and drop this.
-%   \leadinto        -- thick, straight right-arrow bracketing a "pickup" word
-%       that leads into the next section: \leadinto\emph{WORD}\leadinto.  Used
-%       in place of the kernel $\rightarrow$ (thin and curved) for a heavier,
-%       geometric look.  Plain text (no math mode).
+%   \leadinto{WORD}  -- sets WORD as a "pickup" lead-in to the next section:
+%       a short, thick right-arrow on each side, WORD itself italic, slightly
+%       smaller, and faux-slanted a touch beyond italic.  Replaces the kernel
+%       $\rightarrow$ (thin, curved) and folds the old
+%       \leadinto\emph{WORD}\leadinto idiom into one argument-taking command so
+%       the styling lives in one place.  Plain text (no math mode).
 % \noteboxcolor is the single retune point for both the frame and the text
 % colour (matches \minmeasure/\measurepad as tunable knobs).  \fboxsep is set
 % locally so the padding is deterministic, not inherited from the ambient
@@ -216,21 +218,45 @@
   \end{tikzpicture}%
 }
 
-% \leadinto: a straight horizontal shaft with a filled triangular head, drawn at
-% body-text weight.  The tip comes from TikZ's arrows.meta library (Latex = a
-% solid triangle); \usetikzlibrary is idempotent and may appear anywhere in the
-% preamble, so loading it here keeps the dependency next to its only user.
-% baseline=-0.5ex drops the shaft onto the text's math axis so it sits centred on
-% the line.  Three knobs: \MyLSleadarrowlen (overall length), the line width
-% (shaft thickness), and the tip's length/width.
+% \leadinto{WORD} is built from two pieces, both reusing already-loaded TikZ.
+%
+% \MyLSleadarrow -- one short, thick shaft with a filled triangular head (Latex
+%   tip, from arrows.meta; \usetikzlibrary is idempotent and may sit anywhere in
+%   the preamble, so it lives next to its only user).  baseline=-0.5ex drops the
+%   shaft onto the text's math axis so it centres on the line.  Drawn once, used
+%   on both sides, both pointing right ("leads into / continues").
+%
+% The word is set in a one-node picture so it can be faux-slanted past italic:
+%   xslant shears the glyphs by x' = x + slant*y.  It MUST be applied as a
+%   coordinate transformation (xslant + transform shape), NOT as a canvas
+%   transformation (transform canvas={xslant=...}): canvas transforms are
+%   invisible to TikZ's bounding-box computation, which collapses the picture to
+%   ZERO width so the two arrows close over the word.  As a coordinate transform
+%   the sheared box is measured normally (a hair wider than upright), so the word
+%   occupies its space.  The shear fixes the y=0 line and the node's base sits at
+%   y=0, so the text baseline is untouched and the word still sits on the line --
+%   only the ascenders/descenders lean.  The node inherits the ambient weight
+%   (bold in song sections), so \itshape gives bold-italic and \small shrinks it.
+%
+% Knobs: \MyLSleadarrowlen (shaft length), the line width / tip size below, and
+% \MyLSleadslant (extra slant; set to 0 for plain italic).
 \usetikzlibrary{arrows.meta}
 \newlength\MyLSleadarrowlen
-\setlength\MyLSleadarrowlen{1em}
-\newcommand\leadinto{%
+\setlength\MyLSleadarrowlen{0.6em}
+\newcommand\MyLSleadslant{0.18}
+\newcommand\MyLSleadarrow{%
   \begin{tikzpicture}[baseline=-0.5ex]
-    \draw[line width=0.9pt,-{Latex[length=4.5pt,width=4.5pt]}]
+    \draw[line width=1.3pt,-{Latex[length=3.5pt,width=4.5pt]}]
       (0,0) -- (\MyLSleadarrowlen,0) ;
   \end{tikzpicture}%
+}
+\newcommand\leadinto[1]{%
+  \MyLSleadarrow\,%
+  \begin{tikzpicture}[baseline=(w.base)]
+    \node[inner sep=0pt,anchor=base,transform shape,xslant=\MyLSleadslant]
+      (w) at (0,0) {\small\itshape #1} ;
+  \end{tikzpicture}%
+  \,\MyLSleadarrow
 }
 
 % ---------------------------------------------------------------------------
