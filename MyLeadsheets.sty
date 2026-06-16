@@ -150,9 +150,10 @@
 % ---------------------------------------------------------------------------
 % Inline markers
 % ---------------------------------------------------------------------------
-% Small TikZ/boxed glyphs dropped inline in a lyric or \measures line.  All
-% three depend only on packages already loaded above (TikZ via tcolorbox,
-% colours via xcolor), so they need no extra \RequirePackage.
+% Small TikZ/boxed glyphs dropped inline in a lyric or \measures line.  They
+% depend only on packages already loaded above (TikZ via tcolorbox, colours via
+% xcolor); \leadinto additionally pulls in TikZ's arrows.meta library (loaded at
+% its definition), but still no extra \RequirePackage.
 %
 %   \notebox{<text>} -- boxed performance note, e.g. \notebox{pause}.  LOAD-
 %       BEARING: the capo header label (\notebox{capo N}, title template below)
@@ -167,6 +168,10 @@
 %       time-per-document deprecation warning (see \MyLSmydotwarning).  A clean
 %       (converted) song never triggers it, so the no-warnings goal is intact
 %       for current work; convert legacy \mydot uses to \measures and drop this.
+%   \leadinto        -- thick, straight right-arrow bracketing a "pickup" word
+%       that leads into the next section: \leadinto\emph{WORD}\leadinto.  Used
+%       in place of the kernel $\rightarrow$ (thin and curved) for a heavier,
+%       geometric look.  Plain text (no math mode).
 % \noteboxcolor is the single retune point for both the frame and the text
 % colour (matches \minmeasure/\measurepad as tunable knobs).  \fboxsep is set
 % locally so the padding is deterministic, not inherited from the ambient
@@ -208,6 +213,23 @@
   \begin{tikzpicture}
     \draw (0,0) ;
     \filldraw[BrickRed] (0,0.12) circle (0.9pt) ;
+  \end{tikzpicture}%
+}
+
+% \leadinto: a straight horizontal shaft with a filled triangular head, drawn at
+% body-text weight.  The tip comes from TikZ's arrows.meta library (Latex = a
+% solid triangle); \usetikzlibrary is idempotent and may appear anywhere in the
+% preamble, so loading it here keeps the dependency next to its only user.
+% baseline=-0.5ex drops the shaft onto the text's math axis so it sits centred on
+% the line.  Three knobs: \MyLSleadarrowlen (overall length), the line width
+% (shaft thickness), and the tip's length/width.
+\usetikzlibrary{arrows.meta}
+\newlength\MyLSleadarrowlen
+\setlength\MyLSleadarrowlen{1em}
+\newcommand\leadinto{%
+  \begin{tikzpicture}[baseline=-0.5ex]
+    \draw[line width=0.9pt,-{Latex[length=4.5pt,width=4.5pt]}]
+      (0,0) -- (\MyLSleadarrowlen,0) ;
   \end{tikzpicture}%
 }
 
