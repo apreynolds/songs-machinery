@@ -197,10 +197,14 @@
 % .song body can retune them with \setlength\ssplength{4pt} (repeatable, and local
 % to a TeX group such as a section), without redefining the spacer macro.  Uses
 % \hspace* so an explicit nudge is never silently discarded at a line break.
-\newlength\ssplength  \setlength\ssplength{2pt}   % small space
-\newlength\bsplength  \setlength\bsplength{6pt}   % big space
+\newlength\ssplength  \setlength\ssplength{8pt}    % small space
+\newlength\msplength  \setlength\msplength{16pt}   % medium space
+\newlength\bsplength  \setlength\bsplength{24pt}   % big space
+\newlength\xsplength  \setlength\xsplength{32pt}   % xl space
 \newcommand\ssp{\hspace*{\ssplength}}
+\newcommand\msp{\hspace*{\msplength}}
 \newcommand\bsp{\hspace*{\bsplength}}
+\newcommand\xsp{\hspace*{\xsplength}}
 
 \newcommand\repeatbar{%
   \begin{tikzpicture}[baseline=0ex]
