@@ -304,10 +304,11 @@
 \newcommand\moderate {\MyLSdifficultyglyph{RoyalBlue}{(0,0.5) -- (-0.45,-0.35) -- (0.45,-0.35) -- cycle}}
 \newcommand\difficult{\MyLSdifficultyglyph{black}{(0,0.5) -- (0.4,0) -- (0,-0.5) -- (-0.4,0) -- cycle}}
 
-% `difficulty` is not a leadsheets built-in (unlike title/band/tempo/key/capo),
-% so it must be registered with the documented \definesongproperty before
-% \songproperty{difficulty} / \ifsongproperty{difficulty} work in the template.
+% `difficulty' and `tuning' are not leadsheets built-ins (unlike title/band/tempo/key/capo),
+% so both must be registered with \definesongproperty before \songproperty{...} /
+% \ifsongproperty{...} work in the header template.
 \definesongproperty{difficulty}
+\definesongproperty{tuning}
 
 % ---------------------------------------------------------------------------
 % Measures: minimum bar spacing
@@ -599,6 +600,7 @@
     \ifMyLSconcert\else
       \ifsongproperty{capo}{\nobreakspace\notebox{capo \songproperty{capo}}}{}%
     \fi
+    \ifsongproperty{tuning}{\space\small\songproperty{tuning}\normalsize}{}%
   }%
 }
 \setleadsheets{ title-template = mytitle }
