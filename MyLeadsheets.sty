@@ -148,26 +148,61 @@
 }
 
 % ---------------------------------------------------------------------------
-% Inline markers  (TEMPORARY PORT from MyLeadsheets-TEMP-REFERENCE.sty)
+% Inline markers
 % ---------------------------------------------------------------------------
-% \mydot  -- small brick-red beat dot, used inside measures (e.g. ^{\mydot}).
-% \notebox -- small boxed performance note (e.g. \notebox{pause}).
-% Ported verbatim from the reference so the Uberlin / EverybodyHurts examples
-% compile; both rely only on packages already loaded above (TikZ via tcolorbox,
-% colours via xcolor).  Flagged TEMPORARY: they predate the clean rebuild and may
-% be reworked later (see CLAUDE.md "not yet ported" note alongside \repeatbar).
-\newcommand\mydot{%
-  \begin{tikzpicture}
-  \draw (0,0) ;
-  \filldraw[BrickRed] (0,0.12) circle (0.9pt) ;
+% Small TikZ/boxed glyphs dropped inline in a lyric or \measures line.  All
+% three depend only on packages already loaded above (TikZ via tcolorbox,
+% colours via xcolor), so they need no extra \RequirePackage.
+%
+%   \notebox{<text>} -- boxed performance note, e.g. \notebox{pause}.  LOAD-
+%       BEARING: the capo header label (\notebox{capo N}, title template below)
+%       uses it; also used directly in several .song files.  Kept.
+%   \repeatbar       -- TikZ-drawn repeat glyph (two dots + a slash), used as
+%       $\repeatbar$ in legacy raw-pipe .song files.  Ported from the reference
+%       .sty so those files compile.  Whether repeat marks should instead live
+%       in the \measures builder is a separate, still-open question (CLAUDE.md);
+%       porting the glyph here does not pre-empt it.  Kept.
+%   \mydot           -- small brick-red beat dot, e.g. ^{\mydot}.  DEPRECATED:
+%       kept only so legacy archive .song files keep compiling.  Emits a ONE-
+%       time-per-document deprecation warning (see \MyLSmydotwarning).  A clean
+%       (converted) song never triggers it, so the no-warnings goal is intact
+%       for current work; convert legacy \mydot uses to \measures and drop this.
+% \noteboxcolor is the single retune point for both the frame and the text
+% colour (matches \minmeasure/\measurepad as tunable knobs).  \fboxsep is set
+% locally so the padding is deterministic, not inherited from the ambient
+% \fboxsep; \raisebox's box group scopes the assignment, so it reverts on exit.
+% The 0.1em lift nudges the box onto the surrounding text baseline.
+\newcommand\noteboxcolor{RoyalBlue}
+\newcommand\notebox[1]{%
+  \raisebox{0.1em}{%
+    \setlength\fboxsep{2pt}%
+    \fcolorbox{\noteboxcolor}{White}{%
+      \bfseries\ttfamily\upshape\textcolor{\noteboxcolor}{#1}%
+    }%
+  }%
+}
+\newcommand\repeatbar{%
+  \begin{tikzpicture}[baseline=0ex]
+    \draw (0,0) ;
+    \filldraw[BrickRed] (0.2,0.3) circle (1.5pt) ;
+    \draw[line width=2pt,BrickRed] (0.2,-0.05) -- (0.6,0.38) ;
+    \filldraw[BrickRed] (0.6,0.04) circle (1.5pt) ;
   \end{tikzpicture}%
 }
-\newcommand\notebox[1]{%
-  {%
-    \raisebox{0.1em}{\fcolorbox{RoyalBlue}{White}{%
-      \bfseries\ttfamily\upshape\textcolor{RoyalBlue}{#1}%
-    }}%
-  }%
+% \MyLSmydotwarning fires \PackageWarning once, then \global\let-s itself to
+% \relax so the log gets a single line, not one per use (the archive has 1000+
+% \mydot uses).  \protect keeps the control sequences literal in the message.
+\newcommand\MyLSmydotwarning{%
+  \PackageWarning{MyLeadsheets}{%
+    \protect\mydot\space is deprecated; convert legacy songs to \protect\measures}%
+  \global\let\MyLSmydotwarning\relax
+}
+\newcommand\mydot{%
+  \MyLSmydotwarning
+  \begin{tikzpicture}
+    \draw (0,0) ;
+    \filldraw[BrickRed] (0,0.12) circle (0.9pt) ;
+  \end{tikzpicture}%
 }
 
 % ---------------------------------------------------------------------------
