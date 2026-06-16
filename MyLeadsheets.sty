@@ -741,3 +741,30 @@
 \else
   \setleadsheets{ print-chords = true  }
 \fi
+
+% ---------------------------------------------------------------------------
+% Force an even page count  (opt-in, off by default)
+% ---------------------------------------------------------------------------
+% These PDFs are viewed digitally in two-page (spread) mode, where an odd total
+% page count throws every subsequent spread off by one.  A song opts in by
+% putting \ForceEvenPages in its preamble; nothing happens otherwise.
+%
+% At \AtEndDocument the final \clearpage has shipped the last content page, so
+% the `page' counter holds (pages-shipped + 1): odd counter => even content =>
+% leave alone; even counter => odd content => append one blank page.  Crucially
+% the parity is measured on the natural content BEFORE the blank is added, so the
+% measurement is identical on every run -- no oscillation under latexmk (a
+% \pageref{LastPage}-style test would count the blank it just added and flip
+% parity each rebuild).  \null forces the otherwise-empty page to ship;
+% \thispagestyle{empty} keeps it free of any head/foot (matches the no-numbers
+% layout above).
+\newif\ifMyLSforceeven
+\newcommand\ForceEvenPages{\MyLSforceeventrue}
+\AtEndDocument{%
+  \ifMyLSforceeven
+    \clearpage
+    \ifodd\value{page}\else
+      \null\thispagestyle{empty}\clearpage
+    \fi
+  \fi
+}
