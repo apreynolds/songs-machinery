@@ -786,3 +786,55 @@
   \clearpage
   \ifodd\value{page}\else \MyLSblankpage \fi
 }
+
+% ---------------------------------------------------------------------------
+% Songbook "back to contents" link  (songbook-only; no effect standalone)
+% ---------------------------------------------------------------------------
+% In a songbook each song can carry a hyperlink back to the table of contents,
+% in the bottom-right corner of its LAST page -- but ONLY when it fits in the
+% leftover space, so it never forces an extra page (a chock-full last page simply
+% gets no link).  This is purely a songbook concern: it lives in the include
+% wrapper \bookinclude and is never seen by a song compiled on its own, so an
+% individual .song needs no change and cannot be broken by this feature.
+%
+% Requires hyperref, which the songbook loads; the \AtBeginDocument fallback
+% below keeps things harmless if it is absent (link degrades to plain text).
+% Put \MyLStoctarget once, just before \tableofcontents, as the jump destination.
+\AtBeginDocument{%
+  \providecommand\hyperlink[2]{#2}%
+  \providecommand\hypertarget[2]{#2}%
+}
+\newcommand\MyLStocname{MyLStoc}
+\newcommand\MyLStoctarget{\hypertarget{\MyLStocname}{}}
+% appearance -- redefine in the songbook preamble to restyle
+\providecommand\MyLStoclinktext{\textsf{\footnotesize$\hookleftarrow$\,Contents}}
+% safety margin kept clear below the last line before the link is allowed to fit
+\newcommand\MyLStocgap{2\baselineskip}
+
+% Emit the link at the bottom-right IFF the space left on the current page can
+% hold it (link height + gap); otherwise nothing.  \penalty0 after \par makes the
+% page builder count the last line so \pagetotal is current; \pagegoal reads
+% \maxdimen on a still-empty page, treated as a full \textheight of room.  The
+% slack is measured BEFORE the box is added and we only ever append strictly less
+% than that slack, so the page can never overfill.  \vfill drops the box to the
+% bottom; the next \clearpage (from the following \bookinclude, or \end{document})
+% flushes it.  Scratch registers \dimen0/\box0 are used because `@' is not a
+% catcode letter in this package (see the \MyLS... naming throughout).
+\newcommand\MyLStochint{%
+  \par\penalty0
+  \begingroup
+    \setbox0=\hbox{\hyperlink{\MyLStocname}{\MyLStoclinktext}}%
+    \dimen0=\pagegoal
+    \ifdim\dimen0=\maxdimen \dimen0=\textheight \fi
+    \advance\dimen0 -\pagetotal
+    \ifdim\dimen0>\dimexpr\ht0+\dp0+\MyLStocgap\relax
+      \vfill\nointerlineskip\hbox to\hsize{\hfill\box0}%
+    \fi
+  \endgroup
+}
+
+% Songbook include wrapper, replacing the bare \clearoddpage\includeleadsheet:
+% start this song on an odd page (padding the previous song / the TOC), pull it
+% in, then drop the fit-tested back-to-contents link on its last page.  A song
+% that should NOT get a link can still use \clearoddpage\includeleadsheet directly.
+\newcommand\bookinclude[1]{\clearoddpage\includeleadsheet{#1}\MyLStochint}
