@@ -188,11 +188,14 @@
 %       .sty so those files compile.  Whether repeat marks should instead live
 %       in the \measures builder is a separate, still-open question (CLAUDE.md);
 %       porting the glyph here does not pre-empt it.  Kept.
-%   \mydot           -- small brick-red beat dot, e.g. ^{\mydot}.  DEPRECATED:
-%       kept only so legacy archive .song files keep compiling.  Emits a ONE-
-%       time-per-document deprecation warning (see \MyLSmydotwarning).  A clean
-%       (converted) song never triggers it, so the no-warnings goal is intact
-%       for current work; convert legacy \mydot uses to \measures and drop this.
+%   \beatdot / \beat -- brick-red beat dot marking a sustained-chord beat.
+%       \beatdot is the BARE dot for OVER-A-WORD use (^{\beatdot}); \beat is the
+%       self-spacing standalone marker for charts (| A \beat \beat B |), padded by
+%       the tunable \beatspace.  See their definition block below for the why.
+%   \mydot           -- DEPRECATED alias for the bare \beatdot, kept only so
+%       legacy archive .song files keep compiling.  Emits a ONE-time-per-document
+%       deprecation warning (see \MyLSmydotwarning).  A clean (converted) song uses
+%       \beatdot / \beat and never triggers it; the converter rewrites \mydot away.
 %   \leadinto{WORD}  -- sets WORD as a "pickup" lead-in to the next section:
 %       a short, thick right-arrow on each side, WORD itself italic, slightly
 %       smaller, and faux-slanted a touch beyond italic.  Replaces the kernel
@@ -250,21 +253,44 @@
     \filldraw[BrickRed] (0.6,0.04) circle (1.5pt) ;
   \end{tikzpicture}%
 }
-% \MyLSmydotwarning fires \PackageWarning once, then \global\let-s itself to
-% \relax so the log gets a single line, not one per use (the archive has 1000+
-% \mydot uses).  \protect keeps the control sequences literal in the message.
-\newcommand\MyLSmydotwarning{%
-  \PackageWarning{MyLeadsheets}{%
-    \protect\mydot\space is deprecated; convert legacy songs to \protect\measures}%
-  \global\let\MyLSmydotwarning\relax
-}
-\newcommand\mydot{%
-  \MyLSmydotwarning
-  \begin{tikzpicture}
-    \draw (0,0) ;
+% --- Beat markers: \beatdot (bare) and \beat (self-spacing) -----------------
+% A small brick-red dot marking a beat where the previous chord sustains.  Two
+% forms, because the two contexts need opposite spacing behaviour:
+%
+%   \beatdot  -- the BARE dot, no horizontal space of its own.  Use it OVER A
+%       WORD as ^{\beatdot} ("this word lands on a later beat, chord still
+%       ringing", e.g. ^{A}FUNNY ^{\beatdot}TO BE): the ^ chord mechanism already
+%       positions it, so any built-in \hspace would shove the dot off the word
+%       and widen the lyric.  Also the glyph \beat is built from.
+%
+%   \beat     -- the STANDALONE beat marker for chord charts: a \beatdot wrapped
+%       in \beatspace, so "| A \beat \beat B |" spreads the beats across the bar
+%       with no hand-added spacers.  \beatspace is the single tunable knob
+%       (\setlength\beatspace{...} anywhere; local to a TeX group, e.g. a
+%       section).  \hspace* (not \hspace) so the space is never dropped at a line
+%       break.  Do NOT use \beat inside ^{}/_{} -- use \beatdot there.
+%
+% baseline=0ex sits the dot just above the text baseline (as the old \mydot did).
+\newcommand\beatdot{%
+  \begin{tikzpicture}[baseline=0ex]
     \filldraw[BrickRed] (0,0.12) circle (0.9pt) ;
   \end{tikzpicture}%
 }
+\newlength\beatspace
+\setlength\beatspace{0.8em}
+\newcommand\beat{\hspace*{.5\beatspace}\beatdot\hspace*{.5\beatspace}}
+% \mydot -- DEPRECATED alias for the bare \beatdot, kept so legacy archive .song
+% files (1000+ uses) still compile.  Fires \PackageWarning ONCE (then \global\let-s
+% the warning to \relax so the log gets one line, not one per use), and \protect
+% keeps the control sequences literal in the message.  Clean (converted) songs use
+% \beatdot / \beat and never trigger it; the converter rewrites \mydot away.
+\newcommand\MyLSmydotwarning{%
+  \PackageWarning{MyLeadsheets}{%
+    \protect\mydot\space is deprecated; use \protect\beatdot\space (over a word)
+    or \protect\beat\space (standalone)}%
+  \global\let\MyLSmydotwarning\relax
+}
+\newcommand\mydot{\MyLSmydotwarning\beatdot}
 
 % \leadinto{WORD} is built from two pieces, both reusing already-loaded TikZ.
 %
