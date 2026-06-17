@@ -514,32 +514,29 @@
 \ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
-% Capo variants
+% Capo
 % ---------------------------------------------------------------------------
 % A capo'd song is written in CONCERT pitch with `capo=N' in its \begin{song}
 % properties.  leadsheets' own `transpose-capo' then renders every chord N
 % semitones lower -- the shapes actually fretted with the capo on -- and the
-% title template (below) adds a "capo N" note.  So the DEFAULT build is the
-% capo-shapes sheet and needs no special handling; even a bare vimtex compile is
-% correct.  The displayed key stays concert pitch because the title template
-% prints \songproperty{key} raw, never through the chord transposer.
+% title template (below) adds a "capo N" note via \ifsongproperty{capo}.  So a
+% capo wrapper needs no special handling; even a bare vimtex compile is correct.
+% The displayed key stays concert pitch because the title template prints
+% \songproperty{key} raw, never through the chord transposer.
 %
-% The concert-pitch sibling (e.g. for a bass player) is produced by
-% compile-songs, which injects \def\ConcertVariant{true} before \input.  That
-% turns transpose-capo OFF (chords stay as written = concert) and, via
-% \ifMyLSconcert, suppresses the capo note.  A song with no `capo' property is
-% unaffected either way: transpose-capo with capo=0 transposes by a full octave,
-% i.e. identity (verified -- no enharmonic drift).  NB this means every song must
-% set `key=' (concert pitch); leadsheets warns per chord otherwise.
-\providecommand\ConcertVariant{false}% `true' only on the script's concert build
-\def\MyLSconcertflag{true}% plain \def (not \long) so \ifx matches the injected \def
-\newif\ifMyLSconcert
-\ifx\ConcertVariant\MyLSconcertflag \MyLSconcerttrue \else \MyLSconcertfalse \fi
-\ifMyLSconcert
-  \setleadsheets{ transpose-capo = false }
-\else
-  \setleadsheets{ transpose-capo = true  }
-\fi
+% Different pitches/keys of one song are now separate wrapper .song files that
+% each \input a shared body (the "variant-by-wrapper" strategy -- see CLAUDE.md
+% "Output variants").  The concert sibling is simply a wrapper that OMITS
+% `capo=N' (so nothing transposes and the note is absent), and a real key change
+% is a wrapper carrying `transpose=N'.  No \ConcertVariant / \SongTranspose
+% injection and no per-build toggling of transpose-capo is needed any more, so
+% transpose-capo is just set true once, globally.
+%
+% A song with no `capo' property is unaffected: transpose-capo with capo absent
+% (or capo=0) is a full-octave transpose = identity (verified -- no enharmonic
+% drift).  NB every song must still set `key=' (concert pitch); leadsheets warns
+% per chord otherwise.
+\setleadsheets{ transpose-capo = true }
 
 % ---------------------------------------------------------------------------
 % Output variant: chords  (--chords)  -- parallel chart sections
@@ -548,7 +545,8 @@
 % section, so the two sheets stay structurally identical.  It is selected by
 % compile-songs injecting `\def\Variant{chords}' before \input; the
 % \providecommand below makes the ordinary build's \Variant resolve to "default".
-% (Same injection pattern as the capo/transpose axes.)
+% (The chords/lyrics axis is now the only magic-comment-driven variant; capo and
+% transpose are separate wrapper .song files, not injected build flags.)
 %
 % Every lyric section type has a parallel CHART TWIN named <type>chords
 % (versechords, choruschords, ...).  Each twin is a real leadsheets verse type
@@ -710,9 +708,7 @@
     \ifsongproperty{band}{(\songproperty{band})}{}\normalsize\quad%
     \ifsongproperty{key}{\space\songproperty{key}}{}%
     \ifsongproperty{tuning}{\space{(\MyLSformattuning{\songproperty{tuning}})}}{}%
-    \ifMyLSconcert\else
-      \ifsongproperty{capo}{\nobreakspace\notebox{capo \songproperty{capo}}}{}%
-    \fi
+    \ifsongproperty{capo}{\nobreakspace\notebox{capo \songproperty{capo}}}{}%
     \ifsongproperty{tempo}{\space\itshape\songproperty{tempo}bpm\upshape}{}%
     \ifsongproperty{genre}{\hfill\textcolor{ForestGreen}{\songproperty{genre}}}{}%
   }{%
