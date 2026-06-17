@@ -87,132 +87,78 @@ has no preamble — just the `\begin{verse}…` sections — and is read only vi
 
 ## Mechanism reference
 
-Internals of the IMPLEMENTED compile-time-transpose features. The *condensed*
-authoring contracts (what to type in a `.song`) live in CLAUDE.md's "Output
-variants" section; this is the full how-it-works, output mapping, and rationale
+Internals of the IMPLEMENTED output features. The *condensed* authoring
+contracts (what to type in a `.song`) live in CLAUDE.md's "Output variants" and
+"Songbooks" sections; this is the full how-it-works, output mapping, and rationale
 for when the mechanism itself needs touching.
 
-### Capo variants
+### Variant-by-wrapper (capo / transpose / multiple keys)
 
-Working end-to-end for `samples/Uberlin.song` (concert source, `key={Gm}`,
-`capo=3`): `build-pdfs` produces `Uberlin.pdf` (concert) and `Uberlin-CAPO.pdf`
-(Em shapes + "capo 3" note), both showing key Gm. Leans on leadsheets' *native*
-capo handling rather than hand-driven transposition — far simpler than the earlier
-`\CapoSetup`/`\SongCapo`/5-variant-table sketch it replaces.
+Any variant whose *musical content* differs — capo shapes vs concert, a real key
+change, or several keys of one song — is a **separate wrapper `.song`**, not a
+magic comment. The song body (the `\begin{verse}…` sections, **no preamble**)
+lives in `Song--input.song`; each wrapper sets its own `\begin{song}[…]{…}`
+options and `\input`s that body. `build-pdfs` compiles each wrapper to one PDF and
+**skips `*--input.song`** (no preamble → can't compile). Verified on
+`samples/Uberlin{,-CAPO}.song` and `samples/TransposeDemo{,-OriginalKey}.song`.
 
-**How it works:**
+This **replaced** the earlier magic-comment machinery — all removed: the
+`%! capo-pair` / `%! transpose-pair` comments, the injected `\def\ConcertVariant`
+/ `\def\SongTranspose` overrides, the `.sty`'s `\ConcertVariant`/`\ifMyLSconcert`
+block, and `build-pdfs`'s `wants_capo_pair` / `wants_transpose_pair` /
+`compile_concert` / `compile_original_key`.
 
-- **`transpose-capo = true` is set globally** in `MyLeadsheets.sty`. With a
-  `capo=N` property present, leadsheets transposes every chord by `12 − N`
-  semitones = **down N** (mod octave) — exactly the shapes fretted with the capo
-  on (`\__leadsheets_check_capo:`, `songs.code.tex`). Chords transpose only when a
-  `key` property also exists, so **every song must set `key=`** (concert pitch) or
-  leadsheets warns per chord. A non-capo song is unaffected: `capo=0` gives a
-  full-octave transpose = identity (verified — no enharmonic drift).
-- The fret `N` lives **only in `capo=N`** (the native property). There is no
-  `%! capo: N` number and no `\SongCapo` macro any more.
-- The **default build is therefore the capo-shapes sheet with a "capo N" note and
-  needs no machinery at all** — even a bare vimtex hand-compile is correct.
-- The **displayed `key=` stays concert pitch** because the title template prints
-  `\songproperty{key}` *raw*, never through the chord transposer. (Keep it raw —
-  the stock leadsheets template *would* transpose the key.) `\fixedchord` is only
-  needed to render a ♯/♭ glyph in a key like `F#m`, and is still unported.
+**Why the rewrite.** The injection approach produced *one* `.song`'s siblings via
+forced `latexmk -g` rebuilds that spliced `\def`s ahead of `\input`, and needed
+the `\providecommand`/macro indirection (`transpose=\SongTranspose`) purely so the
+injected `\def` could win. Wrappers make each variant an ordinary standalone
+document: no injection, no `-g`, a literal `transpose=2`, and — the real payoff —
+different versions drop straight into a songbook (`\bookinclude` each wrapper),
+which the single-source approach couldn't do.
 
-**The concert-pitch sibling** (e.g. for a bass player) is produced by
-`build-pdfs` when the song carries `%! capo-pair`. With it the script builds
-**two** PDFs: `Song.pdf` = concert and `Song-CAPO.pdf` = capo shapes. The concert
-one injects `\def\ConcertVariant{true}` before `\input` (a `-pdflatex` override
-**forced with `latexmk -g`**, since the injected `\def` doesn't change the source
-and latexmk would otherwise keep a stale PDF); the capo-shapes one is just a
-native build under `-jobname=Song-CAPO`.
+**Capo — leadsheets does the work.** `transpose-capo = true` is set once,
+globally, in `MyLeadsheets.sty`. With a `capo=N` property present, leadsheets
+transposes every chord by `12 − N` semitones = **down N** (mod octave) — exactly
+the shapes fretted with the capo on (`\__leadsheets_check_capo:`,
+`songs.code.tex`). Chords transpose only when a `key` property also exists, so
+**every wrapper must set `key=`** (concert pitch) or leadsheets warns per chord. A
+wrapper with no `capo` is unaffected: capo absent / `capo=0` is a full-octave
+transpose = identity (verified — no enharmonic drift). The title template adds the
+"capo N" note via `\ifsongproperty{capo}{… \notebox{capo \songproperty{capo}} …}{}`,
+so the concert wrapper (no `capo`) simply has no note — no flag plumbing. The
+displayed `key=` stays concert pitch because the template prints
+`\songproperty{key}` *raw*, never through the chord transposer (the stock template
+*would* transpose it). `\fixedchord`, for a ♯/♭ glyph in a key like `F#m`, is still
+unported.
 
-**Division of labour:**
+**Transpose — also pure leadsheets.** A wrapper carrying `transpose=N` (a plain
+literal now) shifts the sounding pitch by N semitones; the original-key sibling is
+a wrapper that omits `transpose=`. l3keys expands a macro value via `\int_set`, so
+`transpose=\macro` *would* still work — but there's no longer any reason to use
+one, since nothing has to undo it.
 
-- **`capo=N` property** — single source of truth for the fret (and, alone, gives
-  the capo-shapes sheet via pure leadsheets — no script needed).
-- **`%! capo-pair` magic comment** — boolean; asks `build-pdfs` for the
-  concert sibling too.
-- **`.sty`** (the "Capo variants" block) — `\providecommand\ConcertVariant{false}`
-  + `\newif\ifMyLSconcert`; on the concert build (`\ConcertVariant` = `true`) it
-  emits `\setleadsheets{transpose-capo=false}` (chords stay concert) and the
-  title template's `\ifMyLSconcert\else … \notebox{capo \songproperty{capo}} …`
-  suppresses the note. *Gotcha:* the flag is compared with `\ifx`, so the helper
-  `\MyLSconcertflag` must be a plain `\def` (not `\newcommand`, which is `\long`
-  and won't `\ifx`-match the injected non-long `\def`).
-- **`build-pdfs`** — `wants_capo_pair()` reads the comment; `compile_concert()`
-  does the injected `-g` build; `build_song()` routes plain `Song.pdf`→concert and
-  `Song-CAPO.pdf`→native shapes.
+**Constraint — never `capo=N` and `transpose=M` in the same wrapper.** The capo
+axis owns transposition (`capo=N` + `transpose-capo`); a literal `transpose=M`
+combines with it (`net = M − N`) and corrupts that sheet. If a baseline transpose
+is ever needed alongside a capo, bake it into the authored chords. Wrappers make
+this easy to keep straight: each carries one or the other.
 
-**Output mapping & policy.** Policy: always transcribe in concert pitch; a capo
-song is just a concert song that additionally carries `capo=N`. Two motivating
-cases both collapse to that: (1) a song transcribed with no capo (say concert B)
-can still emit a `-CAPO` sheet whose chords are the capo shapes; (2) a song
-fretted with a capo (concert Gm, sections fingered in Em) can emit both the
-Em-shapes sheet and a concert sheet (e.g. for a bassist). The mapping:
+**Filename gotcha.** The shared body must use `--`, not `__`: inside `song`,
+leadsheets makes `_` an active character (the `_{C}` chord token), so an
+`\input`-ed filename containing `_` is mangled. See the "`\input` filenames inside
+`song`…" note under *Issues*.
 
-    capo=N                  -> Song.pdf       (capo shapes + "capo N")
-    capo=N, %! capo-pair    -> Song.pdf       (concert)
-                               Song-CAPO.pdf  (capo shapes + "capo N")
-
-Suffix conventions: `-CAPO` (single hyphen) marks *different musical content*;
-`--chords`/`--lyrics` (double hyphen) marks a *different presentation of the same
-content*.
-
-**Constraint — never `transpose=M` in a capo song.** The capo axis owns
-transposition (via `capo=N` + `transpose-capo`); a literal `[transpose=M]`
-combines with it (`net_steps = M − N`) and corrupts both sheets. If a baseline
-transpose is ever needed alongside a capo, bake it into the authored chords.
-
-**Two independent flag families** decide which PDFs are produced — the
-chords/lyrics axis (`%! variants:`) and the capo axis (`capo=N` + optional
-`%! capo-pair`). A song uses either alone or both; keep them mentally separate.
-Still pending: the `\fixedchord` port for accidental-bearing concert keys (`F#m`
-etc.), and folding the chords/lyrics axis together with the capo axis (a chords
-variant of *each* pitch).
-
-### Transpose variants
-
-Original-key sibling, parallel to capo but for a *real* key change (the chords'
-sounding pitch moves, unlike capo's fingering shapes). Working for
-`samples/TransposeDemo.song` (transcribed in C, `transpose=2`): `build-pdfs`
-produces `TransposeDemo.pdf` (chords in D) and `TransposeDemo-OriginalKey.pdf`
-(chords in C).
-
-- The amount `N` lives in `\providecommand\SongTranspose{N}`; the song option is
-  `transpose=\SongTranspose` (a **macro**, never a literal `transpose=2`). l3keys
-  passes the value to `\int_set`, which expands the macro — so `transpose=\macro`
-  *does* work (unlike a macro standing for a whole `key=value`, which does not).
-- **Why the macro indirection is mandatory:** the original-key build must *undo*
-  the transpose, and a literal `transpose=2` (parsed last, inside the song group)
-  can't be undone. With `\providecommand`, an injected `\def\SongTranspose{0}`
-  *before* `\input` wins and the in-song `\providecommand` becomes a no-op — so the
-  amount gets an independent off-switch, the separation capo gets from its
-  `transpose-capo` bool.
-
-**Division of labour:**
-
-- **`\providecommand\SongTranspose{N}` + `transpose=\SongTranspose`** — the amount
-  and its use; the `.song` owns the default (a bare/vimtex compile = transposed).
-- **`%! transpose-pair`** — boolean magic comment; asks for the original-key
-  sibling too.
-- **`build-pdfs`** — `wants_transpose_pair()`; default PDF = native transposed
-  build; `compile_original_key()` injects `\def\SongTranspose{0}` (forced `-g`) for
-  `SONG-OriginalKey.pdf`. **No `.sty` change at all** — leadsheets does the
-  transposition.
-
-**Naming:** `SONG.pdf` (transposed, the default) + `SONG-OriginalKey.pdf` —
-single hyphen like `-CAPO`, marking different musical content.
-
-**Capo vs transpose — keep them straight.** Capo changes the fingering shapes,
-not the sounding key (label stays concert), driven by `capo=N` + `transpose-capo`.
-Transpose changes the sounding key (label should follow), driven by
-`transpose=\SongTranspose`. Independent axes; a song uses at most one.
+**Composes with the presentation axis.** A wrapper may itself carry
+`%! variants: chords` to get the chords/lyrics siblings of *that* key/capo —
+e.g. `Song-CAPO.song` + `%! variants: chords` → `Song-CAPO.pdf` and
+`Song-CAPO--chords.pdf`. The old "folding the two axes" future-work item is thus
+resolved by construction.
 
 ### Deferred — the key label following transposition
 
-The title template prints `\songproperty{key}` raw, so a transposed `SONG.pdf`
-currently shows the *authored* key (e.g. "C") even though its chords are in D; the
-original-key PDF happens to read correctly. Making the key follow the
+The title template prints `\songproperty{key}` raw, so a `transpose=` wrapper's
+PDF currently shows the *authored* key (e.g. "C") even though its chords are in D;
+the original-key wrapper happens to read correctly. Making the key follow the
 transposition is the same conditional flagged for capo — the stock template uses
 `\writechord{\songproperty{key}}` (`songs.code.tex:481`), which transposes — so:
 branch the key print on `\ifsongproperty{capo}` (capo → raw concert key; else →
@@ -293,30 +239,26 @@ compilations) or `~/.cache/latexmk/${project_name}_$hash/` (Generate* commands).
 ## build-pdfs — status
 
 `build-pdfs` (repo root, `~/repos/1sys/tex/songs/build-pdfs`) compiles each
-`.song` to its default PDF and reads magic comments in the **leading** comment
-block (first non-blank, non-`%` line ends the block, mirroring the TeX-engine
-magic comment) to build siblings. The script carries full inline comments; this
-is just the orientation and the live status. See *Output variants* in CLAUDE.md
-for the authoring contracts and *Mechanism reference* above for the internals.
+`.song` to its default PDF, then reads the `%! variants:` magic comment in the
+**leading** comment block (first non-blank, non-`%` line ends the block, mirroring
+the TeX-engine magic comment) to build presentation siblings. It **skips
+`*--input.song`** (shared bodies — no preamble). Capo / transpose / multiple-key
+sheets are no longer the script's concern: each is its own wrapper `.song` (see
+*Variant-by-wrapper* above) that arrives as a separate file in the build loop. The
+script carries full inline comments; this is just the orientation and the live
+status. See *Output variants* in CLAUDE.md for the authoring contracts.
 
-Magic comments (each axis independent):
+The only sibling-producing magic comment:
 
-    %! variants: chords, lyrics   chords/lyrics axis -> Song--<variant>.pdf
-    %! capo-pair                  capo axis -> concert + Song-CAPO.pdf
-    %! transpose-pair             transpose axis -> Song-OriginalKey.pdf
+    %! variants: chords, lyrics   presentation axis -> Song--<variant>.pdf
 
 **Built:**
-- Default PDF for each `.song` (always produced).
+- Default PDF for each `.song` (always produced); `*--input.song` skipped.
 - `-h`/`--help`; no args = every `*.song` in cwd, else the named files. A per-song
   failure is reported and skipped; non-zero exit if any failed.
 - Aux files to `~/.cache/latexmk/{parent-dir}-{jobname}/` via `-auxdir`, sharing
   vimtex's incremental-build database; the PDF lands next to the source. No
   `latexmk -c` (the `.fdb_latexmk` database is worth keeping).
-- **capo axis** — `wants_capo_pair()` + `compile_concert()` injects
-  `\def\ConcertVariant{true}` (forced `-g`); `build_song()` routes `Song.pdf`→
-  concert, `Song-CAPO.pdf`→native shapes.
-- **transpose axis** — `wants_transpose_pair()` + `compile_original_key()` injects
-  `\def\SongTranspose{0}` (forced `-g`) for `Song-OriginalKey.pdf`.
 - **chords variant** — `compile_variant()` injects `\def\Variant{chords}` (forced
   `-g`), producing `Song--chords.pdf`. The `.sty` honours `\Variant` via two
   parallel families: every lyric verse type (`verse`, `chorus`, …) has a **chart
@@ -335,12 +277,13 @@ Magic comments (each axis independent):
   the same as the default build (lyric bodies print, chart twins swallowed). See
   *Variants from one `.song`* item 2 for the `^`/`_` detail.
 
-**Pending:** the `phone` variant; folding the chords/lyrics axis together with the
-capo/transpose axes (e.g. `Song--chords-CAPO.pdf` — not wired
-up, since `read_variants` runs off the default-pitch source after the
-capo/transpose branch). The `-CAPO`/`-OriginalKey` (single-hyphen, *different
-musical content*) vs `--chords`/`--lyrics` (double-hyphen, *different presentation*)
-suffix split is the convention to preserve when that cross-product is built.
+**Pending:** the `phone` variant. (Folding the presentation axis together with
+capo/transpose is no longer pending — it falls out of the wrapper model: put
+`%! variants: chords` in a capo/transpose wrapper and that wrapper gets its own
+`--chords`/`--lyrics` siblings, e.g. `Song-CAPO.song` → `Song-CAPO--chords.pdf`.)
+The `-CAPO`/`-OriginalKey` (single-hyphen, *different musical content*) vs
+`--chords`/`--lyrics` (double-hyphen, *different presentation*) suffix split is the
+convention to preserve.
 
 ## Future work — output variants from one `.song`
 
