@@ -241,6 +241,63 @@ it up snug under the title; the value goes through `\MyLSformattuning` (accident
 rendered, never transposed — its own mechanism). Knobs: `\MyLStuningfont` /
 `\MyLStuningraise`. `tempo` was dropped from the header entirely in this redesign.
 
+### Remarks (NOTES block)
+
+A `remarks` environment, authored **after** `\end{song}`, appends a bottom-of-page
+notes block (`MyLeadsheets.sty`, "Remarks" section). Authoring contract is
+CLAUDE.md's *Remarks / NOTES block* bullet; this is the how.
+
+**Why outside the song env.** Inside `\begin{song}…\end{song}` leadsheets makes
+`^ _ | :` active (chord/barline shorthands — `songs.code.tex:143–146`, activated
+in `\leadsheets_specials:`) and applies the bold "song" body format, both hostile
+to prose. Outside, catcodes/formatting are normal: `|` and `:` print literally
+(the real win — inside they'd become barlines/repeats); `^`/`_` still need escaping
+but that's plain-LaTeX text mode, not the song env.
+
+**Reading the song's properties from outside (the one wrinkle).** `\songproperty`
+expands `\leadsheets_get_property:Vn \l_leadsheets_current_song_id_tl {…}`. The
+property *store* is global (`\prop_gput:cnV`, keyed by song id —
+`properties.code.tex:42`), so it survives `\end{song}`; but
+`\l_leadsheets_current_song_id_tl` is set only *locally* inside the song's group
+(`songs.code.tex:291`, inside the `\group_begin:`/`\group_end:` at 203/318), so it
+has reverted by the time the `remarks` env runs. Fix: the title template (which
+runs inside the song) calls `\MyLScapturesongid`, copying that id into the global
+`\g__myls_song_id_tl`; the `remarks` env restores it **locally** (reverts at
+`\end{remarks}`) and `\songproperty`/`\ifsongproperty` then resolve against this
+song. `\l_leadsheets_current_song_id_tl` is leadsheets' **public** (single-`_`)
+variable, so this uses no private internals — only the song-redesign-discouraged
+double-`_` names are avoided. The capture fires on both the measuring and the real
+pass (the body runs twice); harmless, the global is reassigned the same value.
+
+**Structure / catcode care.** Helper `\__myls_remarks_head:` *and* the
+`\NewDocumentEnvironment{remarks}` live in **one** `\ExplSyntaxOn` block so the
+`:`-bearing helper name tokenises validly; the stored env code runs later under
+normal catcodes (the author's body is unaffected). All literal strings ("NOTES",
+"Tempo:") live in `\newcommand` knobs *outside* expl3 — keeping them inside would
+hit expl3's `:`-is-a-letter / `~`-is-a-space rules. The block uses `\hrule` in
+vertical mode (after `\par`), and sets `\parindent=0pt` locally.
+
+**Placement / songbook.** `\par\vfill` at the env top drops the block to the page
+bottom; the document's final `\clearpage` (or the next `\bookinclude`'s) lets the
+glue stretch. It flows onto a new page if it doesn't fit. In a songbook the block
+is included for free: `\includeleadsheet` rewrites the file's
+`\end{document}`→`\endinput` (`external.code.tex:43–49`), so all body content
+between `\begin{document}` and `\end{document}` — including a post-`\end{song}`
+remarks block — is pulled in. (Untested: a `remarks` `\vfill` combined with
+`\bookinclude`'s own `\MyLStochint` `\vfill` on the same last page — both stretch,
+could interact; standalone is the target use.)
+
+**Shared remarks across wrappers** (variant-by-wrapper): put
+`\begin{remarks}…\end{remarks}` in a `Song--remarks--input.song` and `\input` it
+**outside** each wrapper's `\begin{song}`. Because that `\input` is outside the song
+env, the `_`-in-filename gotcha (active `_` inside `song`) does **not** apply there,
+though `--` stays consistent with convention.
+
+**Header is not a `\section`.** Deliberately a styled paragraph
+(`\MyLSremarksheadfont`), not `\section*`, so it never reaches the TOC, a PDF
+bookmark, or a running head. Knobs: `\MyLSremarkslabel` / `…dash` / `…tempolabel` /
+`…headfont` / `…metafont` / `…rule`.
+
 ### Deferred — the key label following transposition
 
 The title template prints `\songproperty{key}` raw, so a `transpose=` wrapper's
