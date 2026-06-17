@@ -340,12 +340,24 @@
 \newcommand\moderate {\MyLSdifficultyglyph{RoyalBlue}{(0,0.5) -- (-0.45,-0.35) -- (0.45,-0.35) -- cycle}}
 \newcommand\difficult{\MyLSdifficultyglyph{black}{(0,0.5) -- (0.4,0) -- (0,-0.5) -- (-0.4,0) -- cycle}}
 
+% TEMPORARY (2026-06-17): \transup / \transdown arrows ported verbatim from the
+% reference .sty so legacy songs carrying `istransposed={\transup 2}` compile.
+% Not yet wired into the header template (the property is merely stored, not
+% printed); the whole transpose-label mechanism is slated for a redesign — drop
+% or rework these then.  See the matching `istransposed' property below.
+\newcommand\transdown{\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Downarrow$}}}
+\newcommand\transup  {\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Uparrow$}}}
+
 % `difficulty', `tuning' and `variant' are not leadsheets built-ins (unlike
 % title/band/tempo/key/capo), so each must be registered with \definesongproperty
 % before \songproperty{...} / \ifsongproperty{...} work in the header template.
 \definesongproperty{difficulty}
 \definesongproperty{tuning}
 \definesongproperty{variant}
+% TEMPORARY (2026-06-17): registered only so legacy songs with `istransposed='
+% stop erroring on an unknown key; the value is stored but not rendered.  Revisit
+% with the transpose-label redesign (see \transup / \transdown above).
+\definesongproperty{istransposed}
 
 % \fixedchord{<chord>} — renders a chord name with leadsheets' symbol formatting
 % (# -> sharp symbol, b -> flat symbol, etc.) WITHOUT applying any transposition.
