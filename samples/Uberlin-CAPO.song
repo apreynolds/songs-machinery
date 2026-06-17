@@ -5,10 +5,10 @@
 
 % Capo wrapper -- `capo=3' makes leadsheets render the capo shapes (chords down
 % 3) and the title template add a "capo 3" note. Shares the body with the
-% concert wrapper Uberlin.song via \input{Uberlin--input.song}. The displayed
-% key stays concert pitch (Gm). See CLAUDE.md "Output variants".
+% concert wrapper Uberlin.song via \input{UberlinDemo--input.song}. The
+% displayed key stays concert pitch (Gm). See CLAUDE.md "Output variants".
 \begin{song}[]{title={Uberlin}, band={REM}, key={Gm}, capo=3}
-  \input{Uberlin--input.song}
+  \input{UberlinDemo--input.song}
 \end{song}
 
 \end{document}

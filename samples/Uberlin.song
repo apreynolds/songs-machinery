@@ -5,10 +5,14 @@
 
 % Concert-pitch wrapper -- no `capo', so the chords print as transcribed
 % (concert) and there is no "capo N" note. The capo-shapes sibling is
-% Uberlin-CAPO.song; both \input the shared body Uberlin--input.song. This is
-% the "variant-by-wrapper" strategy -- see CLAUDE.md "Output variants".
-\begin{song}[]{title={Uberlin}, band={REM}, key={Gm}}
-  \input{Uberlin--input.song}
+% Uberlin-CAPO.song; both \input the shared body UberlinDemo--input.song. This
+% is the "variant-by-wrapper" strategy -- see CLAUDE.md "Output variants".
+% (Body named UberlinDemo--, not Uberlin--, so it can't shadow a real
+% Uberlin--input.song in an external songbook via the recursive TEXINPUTS.)
+\begin{song}[]{title={Uberlin}, band={REM}, key={\fixedchord{Gm}},variant={cp.},tuning={EbABCDF#}, genre={Folk}}
+  \meter{12}{8}
+
+  \input{UberlinDemo--input.song}
 \end{song}
 
 \end{document}

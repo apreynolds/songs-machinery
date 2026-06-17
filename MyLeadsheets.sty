@@ -969,11 +969,45 @@
   \endgroup
 }
 
+% --- \MyLSaddsongdir: make a wrapper's shared-body \input cwd-proof -----------
+% A wrapper .song pulls in its shared body with a bare \input{Song--input.song},
+% which TeX resolves relative to the MAIN job's directory (plus TEXINPUTS), NOT
+% relative to the wrapper file.  Compiled on its own the cwd IS the song's folder,
+% so the sibling body is found.  But \bookinclude'd into a songbook whose .song
+% sits in a PARENT directory (e.g. \bookinclude{song-files/Song.song}), the bare
+% body name no longer resolves: either "File not found", or -- worse and silent --
+% a stale same-named body elsewhere on TEXINPUTS gets picked up instead.
+% Fix: parse the included song's own directory out of the \bookinclude argument
+% and prepend it to \input@path, so the nested \input also searches that folder.
+% (@ is not a catcode letter in this package -- see line ~52 -- so wrap in
+% \makeatletter, as elsewhere.)
+\makeatletter
+\newcommand\MyLSaddsongdir[1]{%
+  \filename@parse{#1}%
+  \ifx\filename@area\@empty\else
+    \@ifundefined{input@path}{\def\input@path{}}{}%
+    \edef\input@path{{\filename@area}\input@path}%
+  \fi
+}
+\makeatother
+
 % Songbook include wrapper, replacing the bare \clearoddpage\includeleadsheet:
 % start this song on an odd page (padding the previous song / the TOC), pull it
 % in, then drop the fit-tested back-to-contents link on its last page.  A song
-% that should NOT get a link can still use \clearoddpage\includeleadsheet directly.
-\newcommand\bookinclude[1]{\clearoddpage\includeleadsheet{#1}\MyLStochint}
+% that should NOT get a link can still use \clearoddpage\includeleadsheet directly
+% (but loses the \MyLSaddsongdir fix, so a hand-included shared-body wrapper would
+% need \MyLSaddsongdir before \includeleadsheet, both in a group).  The \begingroup
+% scopes \input@path to this one song so it reverts before the next include; the
+% include's lasting effects (TOC/bookmark writes, counters) are global, so the
+% group does not lose them.
+\newcommand\bookinclude[1]{%
+  \clearoddpage
+  \begingroup
+    \MyLSaddsongdir{#1}%
+    \includeleadsheet{#1}%
+  \endgroup
+  \MyLStochint
+}
 
 % ---------------------------------------------------------------------------
 % Debug aid: make overfull \hbox lines visible in the PDF

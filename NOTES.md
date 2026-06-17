@@ -148,6 +148,23 @@ leadsheets makes `_` an active character (the `_{C}` chord token), so an
 `\input`-ed filename containing `_` is mangled. See the "`\input` filenames inside
 `song`…" note under *Issues*.
 
+**Songbook body-resolution gotcha (fixed in `\bookinclude`).** A wrapper's bare
+`\input{Song--input.song}` resolves relative to the *main job's* directory, not
+the wrapper file's. Standalone that is the song's own folder (body found); but
+`\bookinclude{song-files/Song.song}` runs from the songbook's parent dir, so the
+bare name no longer resolves — either "File not found", or (worse, silent) a
+same-named body elsewhere on the recursive `TEXINPUTS` is picked up instead. Fix:
+`\bookinclude` now runs `\MyLSaddsongdir{#1}` inside a `\begingroup`, which
+`\filename@parse`s the song's own directory out of the include argument and
+prepends `{dir/}` to `\input@path` so the nested `\input` searches it too; the
+group scopes it per song. **Caveat — `\input@path` is consulted only after the
+bare name fails via cwd/`TEXINPUTS`, so a stale same-named body still wins if one
+is reachable.** This bit `samples/Uberlin--input.song` (an old raw-pipe copy under
+the `~/repos/1sys/tex//` `TEXINPUTS` tree) silently shadowing the live
+`rem-songs/song-files/Uberlin--input.song`; renamed to `UberlinDemo--input.song`
+so its bare name can't collide. Moral: don't give a sample body the same
+`<RealSong>--input.song` name as a real song's body anywhere under `TEXINPUTS`.
+
 **Composes with the presentation axis.** A wrapper may itself carry
 `%! variants: chords` to get the chords/lyrics siblings of *that* key/capo —
 e.g. `Song-CAPO.song` + `%! variants: chords` → `Song-CAPO.pdf` and
@@ -247,11 +264,16 @@ that gates its blank behind `\if@twoside` (`scrartcl.cls`:1239–1245,
 `\cleardoubleoddpageusingstyle`), and this class is single-sided; going `twoside`
 would swap margins and restore headers, so we pad explicitly.
 
-**`\bookinclude{file}`** = `\clearoddpage\includeleadsheet{file}\MyLStochint`. The
-hint runs *after* the include returns (at the song's `\end{document}`→`\endinput`),
-so it sits at the end of that song's content, before the next `\bookinclude`'s
-`\clearoddpage`. Folding it into the wrapper (not per-song) means an individual
-`.song` carries nothing and a standalone compile cannot be affected.
+**`\bookinclude{file}`** = `\clearoddpage` then
+`\begingroup\MyLSaddsongdir{file}\includeleadsheet{file}\endgroup` then
+`\MyLStochint`. The `\MyLSaddsongdir`/group handles shared-body path resolution
+(see the *Songbook body-resolution gotcha* note above); the include's lasting
+effects — TOC/bookmark writes, counters — are global, so the group does not lose
+them. The hint runs *after* the include returns (at the song's
+`\end{document}`→`\endinput`), so it sits at the end of that song's content,
+before the next `\bookinclude`'s `\clearoddpage`. Folding it into the wrapper (not
+per-song) means an individual `.song` carries nothing and a standalone compile
+cannot be affected.
 
 **`\MyLStochint` — the fit test (the hard part).** Place a back-to-TOC `\hyperlink`
 at bottom-right *iff* it fits, else nothing — must **never** force a new page.
