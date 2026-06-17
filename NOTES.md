@@ -165,6 +165,28 @@ the `~/repos/1sys/tex//` `TEXINPUTS` tree) silently shadowing the live
 so its bare name can't collide. Moral: don't give a sample body the same
 `<RealSong>--input.song` name as a real song's body anywhere under `TEXINPUTS`.
 
+**Escape hatch: the `import` package (not used; here if needed).** `import` is the
+canonical answer to "my `\input` breaks once files live in subdirectories":
+`\import{dir/}{file}` / `\subimport{rel/}{file}` keep a *current-directory stack*
+so an imported file's own `\input`/`\includegraphics` resolve relative to where
+*that file* lives, to arbitrary depth. We deliberately did **not** reach for it:
+the songbook crosses a directory boundary in exactly *one* place, and the dir is
+handed to us as the `\bookinclude` argument, so the kernel's own `\input@path`
+(what `import` is itself a wrapper around) does the job in ~8 lines with no
+dependency. `import` would earn its keep only if the include graph gets genuinely
+deep — bodies that `\input` *their own* subdir files, per-song asset/graphics
+folders, etc. One thing it *would* buy even now: because it builds an **explicit**
+path rather than relying on search *order*, it makes the local file win over a
+same-named `TEXINPUTS` copy — i.e. it would have dodged the Uberlin shadow without
+the rename (see the caveat above). We chose kernel + no-colliding-names instead.
+  - **KOMA compatibility:** expected fine, though not empirically tested in this
+    project. `import` works purely at the file-inclusion layer (a dir stack plus
+    redefined `\input`/`\include`/`\includegraphics`); it touches nothing KOMA
+    cares about — page layout, fonts, sectioning, `\setkomafont` — so the concerns
+    are orthogonal. It redefines `\include`, but leadsheets pulls songs via
+    `\includeleadsheet` (not `\include`), so even that doesn't collide. If adopted,
+    smoke-test a one-song book first, but no conflict is anticipated.
+
 **Composes with the presentation axis.** A wrapper may itself carry
 `%! variants: chords` to get the chords/lyrics siblings of *that* key/capo —
 e.g. `Song-CAPO.song` + `%! variants: chords` → `Song-CAPO.pdf` and
