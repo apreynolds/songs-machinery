@@ -217,6 +217,17 @@
   {\bfseries\ttfamily \textcolor{RoyalBlue}{[#1]}}
 }
 
+% \meter{<num>}{<den>}: leadsheets' stacked time-signature symbol, recoloured so
+% a bare \meter{12}{8} in a .song carries the colour automatically -- no more
+% hand-wrapping each one in \textcolor{...}.  The original is preserved under
+% \MyLSmeterorig and re-wrapped in \textcolor; \mymetercolor is the single retune
+% point (matches \noteboxcolor), defaulting to BrickRed to match the chords.
+% \renewrobustcmd keeps \meter robust (etoolbox, already loaded via leadsheets).
+% Safe to override: nothing inside leadsheets uses \meter itself.
+\newcommand\mymetercolor{BrickRed}
+\let\MyLSmeterorig\meter
+\renewrobustcmd*\meter[2]{\textcolor{\mymetercolor}{\MyLSmeterorig{#1}{#2}}}
+
 % \ssp / \bsp: manual horizontal nudge-spacers for fine-tuning spacing inside
 % \measures (or anywhere inline).  The *amounts* live in length registers so a
 % .song body can retune them with \setlength\ssplength{4pt} (repeatable, and local
