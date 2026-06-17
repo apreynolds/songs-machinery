@@ -63,8 +63,12 @@
 \newcommand\myleadsheetsboxend{\enditemize\endtcolorbox}
 
 % --- one template per part type, colour written in directly ----------------
-% These are not applied automatically; opt in per section by passing the
-% matching template in the .song file, e.g. \begin{verse}[template=versebox].
+% Each part type's box is its DEFAULT template (set just below), so a bare
+% \begin{verse} in the .song is already boxed -- no [template=versebox] needed.
+% The named templates remain as override hooks: pass [template=chorusbox] to
+% borrow another type's box, or [template=itemize] for a plain (un-boxed)
+% section.  (The chart twins set the same defaults via \newversetype, further
+% down, so the lyric and chart families look identical.)
 \defineversetypetemplate{versebox}     {\myleadsheetsboxbegin{Gray!6}}        {\myleadsheetsboxend}
 \defineversetypetemplate{chorusbox}    {\myleadsheetsboxbegin{Green!9}}       {\myleadsheetsboxend}
 \defineversetypetemplate{solobox}      {\myleadsheetsboxbegin{RoyalPurple!14}}{\myleadsheetsboxend}
@@ -76,6 +80,27 @@
 \defineversetypetemplate{prechorusbox} {\myleadsheetsboxbegin{Green!5}}       {\myleadsheetsboxend}
 \defineversetypetemplate{postchorusbox}{\myleadsheetsboxbegin{Green!5}}       {\myleadsheetsboxend}
 \defineversetypetemplate{custompartbox}{\myleadsheetsboxbegin{white}}         {\myleadsheetsboxend} % untinted
+
+% --- make each box the part type's DEFAULT template ------------------------
+% `template' is the documented per-type key (leadsheets/<type> path, same public
+% API as verse/named etc. below).  Setting it here means the coloured box is
+% applied automatically, so the .song writes a bare \begin{verse} and the
+% [template=...] option is needed only to override (borrow another box, or
+% [template=itemize] for a plain section).  prechorus is a class built-in;
+% lift/postchorus/custompart were \newversetype'd above; all accept this key.
+\setleadsheets{
+  verse/template       = versebox ,
+  chorus/template      = chorusbox ,
+  intro/template       = introbox ,
+  outro/template       = outrobox ,
+  interlude/template   = interludebox ,
+  bridge/template      = bridgebox ,
+  solo/template        = solobox ,
+  prechorus/template   = prechorusbox ,
+  postchorus/template  = postchorusbox ,
+  lift/template        = liftbox ,
+  custompart/template  = custompartbox ,
+}
 
 % ---------------------------------------------------------------------------
 % Section labels: short names, numbered where appropriate

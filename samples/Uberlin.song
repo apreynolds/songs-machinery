@@ -14,7 +14,7 @@
 
   % \notebox{4-count, Gtr pick-up on 3. ALL IN on 1 }
 
-  \begin{verse}[template=versebox]
+  \begin{verse}
     | ^{Gm}HEY NOW
     | ^{<Bb}TAKE YOUR PILLS AND
     | ^{Dm}HEY NOW
@@ -33,7 +33,7 @@
     | WAY, I  |
   \end{verse}
 
-  \begin{lift}[template=liftbox]
+  \begin{lift}
     | ^{Eb}KNOW, I KNOW, I
     | KNOW WHAT I AM
     | ^{Dm}CHASING
@@ -44,7 +44,7 @@
     | ME |
   \end{lift}
 
-  \begin{chorus}[template=chorusbox]
+  \begin{chorus}
     | ^{Eb} I AM
     | ^{<Gm}FLYING ON A
     | ^{Bb}STAR INTO A
@@ -63,7 +63,7 @@
     | \qquad |
   \end{chorus}
 
-  \begin{verse}[template=versebox]
+  \begin{verse}
     | ^{Gm}HEY NOW,
     | ^{<Bb}TAKE THE U-BAHN,
     | ^{Dm}FIVE STOPS,
@@ -82,7 +82,7 @@
     | BRIGHT |
   \end{verse}
 
-  \begin{lift}[template=liftbox]
+  \begin{lift}
     | ^{Eb}KNOW, I KNOW, I
     | KNOW WHAT I AM
     | ^{Dm}CHASING
@@ -93,7 +93,7 @@
     | ME |
   \end{lift}
 
-  \begin{chorus}[template=chorusbox]
+  \begin{chorus}
     | ^{Eb} I AM
     | ^{<Gm}FLYING ON A
     | ^{Bb}STAR INTO A
@@ -112,7 +112,7 @@
     | \qquad |
   \end{chorus}
 
-  \begin{bridge}[template=bridgebox]
+  \begin{bridge}
     |: _{Db}
     |  _{Db}
     | _{Ab}
@@ -123,7 +123,7 @@
     | _{Bb} :|
   \end{bridge}
 
-  \begin{verse}[template=versebox]
+  \begin{verse}
     | ^{Gm}I DON'T
     | ^{<Bb}MIND REPEATING,
     | ^{Dm}I AM
@@ -142,7 +142,7 @@
     | NIGHT?  I  |
   \end{verse}
 
-  \begin{lift}[template=liftbox]
+  \begin{lift}
     | ^{Eb}KNOW, I KNOW, I
     | KNOW THAT THIS IS
     | ^{Dm}CHANGING
@@ -153,7 +153,7 @@
     | ÜBERLIN |
   \end{lift}
 
-  \begin{chorus}[template=chorusbox]
+  \begin{chorus}
     | ^{Eb} I AM
     | ^{<Gm}FLYING ON A
     | ^{Bb}STAR INTO A

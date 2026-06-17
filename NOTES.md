@@ -386,16 +386,21 @@ lyric body stays in `verse`/`chorus`/…, and the chart goes in a parallel twin
 variant prints exactly one family; the other's bodies are swallowed (xparse `+b`).
 Usage:
 
-    \begin{verse}[template=versebox]
+    \begin{verse}
       ... ^{C}word lyric body — prints in lyrics+chords and lyrics-only ...
     \end{verse}
     \begin{versechords}
       ... \measures chart body — prints in chart-only ...
     \end{versechords}
 
-Each twin is a real `\newversetype` whose **default** `template=` is its
-counterpart's coloured box (`versechords` → `versebox`), so it needs **no
-`[template=]`** in the `.song` and reproduces the lyric section's colour *and*
+Both families box by default now: `verse`/`chorus`/… carry their coloured box as
+their **default** `template` (set in the `.sty`'s "make each box the part type's
+DEFAULT template" block), so a bare `\begin{verse}` is already boxed — the
+`[template=…]` option is needed only to override (borrow another box, or
+`[template=itemize]` for a plain section). Each twin is likewise a real
+`\newversetype` whose **default** `template=` is its counterpart's coloured box
+(`versechords` → `versebox`), so it needs **no `[template=]`** in the `.song` and
+reproduces the lyric section's colour *and*
 label (`V1:`/`C1:`/`In:`) automatically — the labels line up section-for-section
 because the sections are authored in parallel. `choruschords` deliberately drops
 chorus's italic (it takes the global upright/bold `verses-format`). Defined in the

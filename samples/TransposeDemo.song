@@ -19,14 +19,14 @@
 \begin{song}[transpose=\SongTranspose]{title={Transpose Demo}, key={C}}
   \sffamily
 
-  \begin{verse}[template=versebox]
+  \begin{verse}
     | ^{C}one little
     | ^{F}two little
     | ^{G}three little
     | ^{Am}words |
   \end{verse}
 
-  \begin{chorus}[template=chorusbox]
+  \begin{chorus}
     | ^{C}sing it
     | ^{G}loud and
     | ^{F}sing it

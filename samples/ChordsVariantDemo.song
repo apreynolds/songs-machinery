@@ -11,14 +11,14 @@
   % lyric bodies; the chords variant prints the twins, each in the SAME coloured
   % box and with the SAME label (In:/V1:/C1:/Out:) as its lyric counterpart.
 
-  \begin{intro}[template=introbox]
+  \begin{intro}
     \measures[repeat]{{_{Em}}{_{D}}{_{Em}}{_{Em}}}
   \end{intro}
   \begin{introchords}
     \measures[repeat]{{_{Em}}{_{D}}{_{Em}}{_{Em}}}
   \end{introchords}
 
-  \begin{verse}[template=versebox]
+  \begin{verse}
     ^{Em}THIS is a lyric ^{D}line with chords \\
     ^{G}over the ^{C}words to be hidden
   \end{verse}
@@ -26,14 +26,14 @@
     \measures{{^{Em}}{^{D}}{^{G}}{^{C}}}
   \end{versechords}
 
-  \begin{chorus}[template=chorusbox]
+  \begin{chorus}
     ^{Em}FIRE, said the ^{D}man with the gun
   \end{chorus}
   \begin{choruschords}
     \measures{{^{Em}}{^{D}}}
   \end{choruschords}
 
-  \begin{outro}[template=outrobox]
+  \begin{outro}
     ^{Em}fading ^{D}out
   \end{outro}
   \begin{outrochords}
