@@ -21,28 +21,19 @@
 # `phone' is planned. The magic comment must sit in the leading comment block,
 # before \documentclass (TeX magic-comment convention).
 #
-# Capo (a separate axis): a song written in concert pitch with `capo=N' in its
-# \begin{song} properties builds, by default, to the capo-shapes sheet (chords
-# down N, "capo N" note) -- that is pure leadsheets, no script involvement. Add
+# Different pitches/keys of one song (capo shapes vs concert, or a real key
+# change) are NOT a magic-comment axis: each is its own wrapper .song that
+# \input's a shared body file. Put the song body (no preamble) in
+# SONG--input.song, then write thin wrappers -- SONG.song, SONG-CAPO.song,
+# SONG-OriginalKey.song, ... -- that each set their own \begin{song}[...]{...}
+# options (capo=N, transpose=N, key=...) and \input{SONG--input.song}. Every
+# wrapper is a normal standalone .song and builds to one PDF here. The
+# -CAPO/-OriginalKey suffix (single hyphen) marks different musical content, vs
+# --chords/--lyrics (double hyphen) presentation; it is now just your filename,
+# not something this script generates.
 #
-#     %! capo-pair
-#
-# to also get the concert-pitch sibling. With it, SONG.pdf becomes the CONCERT
-# sheet (built by injecting \def\ConcertVariant{true}, which the .sty turns into
-# transpose-capo=off + no capo note) and the capo-shapes sheet is renamed
-# SONG-CAPO.pdf. The -CAPO suffix (vs --variant) marks that its musical content
-# differs, not just its presentation.
-#
-# Transpose (another such axis): a song written with
-#
-#     \providecommand\SongTranspose{N}
-#     \begin{song}[transpose=\SongTranspose]{... key={...}}
-#
-# builds, by default, to the transposed sheet (chords up N) -- again pure
-# leadsheets. Add `%! transpose-pair' to also get SONG-OriginalKey.pdf, the
-# as-written chart, built by injecting \def\SongTranspose{0} (which overrides the
-# amount to 0). The \providecommand/macro indirection is what lets the injection
-# win; a literal transpose=N could not be undone.
+# Body files (SONG--input.song) are includes, not standalone documents, so this
+# script SKIPS any *--input.song (it has no preamble and would fail to compile).
 #
 # Relies on the global latexmkrc for the pdflatex invocation
 # (--shell-escape, nonstopmode) and on TEXINPUTS (set in .zprofile) for the
@@ -87,62 +78,6 @@ read_variants() {
   done <"$file"
 }
 
-# True if the .song's leading magic-comment block contains `%! capo-pair'
-# (the capo axis: also produce the opposite-pitch sheet). Same leading-block
-# scan as read_variants.
-wants_capo_pair() {
-  local file=$1 line
-  while IFS= read -r line; do
-    if [[ -n $line && ${line#\%} == "$line" ]]; then
-      break
-    fi
-    if [[ $line =~ ^%![[:space:]]*capo-pair[[:space:]]*$ ]]; then
-      return 0
-    fi
-  done <"$file"
-  return 1
-}
-
-# True if the .song's leading magic-comment block contains `%! transpose-pair'
-# (the transpose axis: also produce the original-key sheet). Same leading-block
-# scan as read_variants.
-wants_transpose_pair() {
-  local file=$1 line
-  while IFS= read -r line; do
-    if [[ -n $line && ${line#\%} == "$line" ]]; then
-      break
-    fi
-    if [[ $line =~ ^%![[:space:]]*transpose-pair[[:space:]]*$ ]]; then
-      return 0
-    fi
-  done <"$file"
-  return 1
-}
-
-# Build the concert-pitch sibling of a capo song: inject \def\ConcertVariant{true}
-# so MyLeadsheets.sty switches transpose-capo off (chords stay as written =
-# concert) and drops the capo note. The injected \def doesn't change the source,
-# so latexmk's source-based up-to-date check would skip the rebuild -- force it
-# with -g. The -pdflatex override mirrors the global latexmkrc invocation.
-compile_concert() {
-  local jobname=$1 src=$2 auxdir=$3
-  latexmk -pdf -g -auxdir="$auxdir" -jobname="$jobname" \
-    -pdflatex='pdflatex --shell-escape %O -synctex=0 -interaction=nonstopmode "\def\ConcertVariant{true} \input{%S}"' \
-    "$src"
-}
-
-# Build the original-key sibling of a transpose-pair song: inject
-# \def\SongTranspose{0}, which (because the .song defines its transpose amount
-# with \providecommand\SongTranspose{N} and writes transpose=\SongTranspose)
-# overrides the amount to 0 = no transposition. Forced with -g for the same
-# reason as compile_concert. Override mirrors the global latexmkrc invocation.
-compile_original_key() {
-  local jobname=$1 src=$2 auxdir=$3
-  latexmk -pdf -g -auxdir="$auxdir" -jobname="$jobname" \
-    -pdflatex='pdflatex --shell-escape %O -synctex=0 -interaction=nonstopmode "\def\SongTranspose{0} \input{%S}"' \
-    "$src"
-}
-
 # Build a presentation variant (chords or lyrics) of a song: inject
 # \def\Variant{NAME} so MyLeadsheets.sty selects that variant's bodies (chords
 # prints the chart twins and suppresses the lyric types; lyrics prints the lyric
@@ -162,7 +97,7 @@ compile_variant() {
 # Runs in a subshell so the cd (and the aux-dir scheme that depends on cwd)
 # stays local to this build. Returns non-zero if the default compile fails.
 build_song() {
-  local song=$1 dir base jobname auxdir variant capoaux okaux varaux
+  local song=$1 dir base jobname auxdir variant varaux
   dir=$(dirname -- "$song")
   base=$(basename -- "$song")
   jobname=${base%.song}
@@ -179,31 +114,11 @@ build_song() {
     auxdir="$HOME/.cache/latexmk/${PWD##*/}-$jobname"
     mkdir -p "$auxdir" || exit
 
-    if wants_capo_pair "$base"; then
-      # Capo song wanting both pitches: the default PDF is the CONCERT sheet
-      # (transpose-capo off, no capo note); the capo-shapes sheet takes the
-      # -CAPO suffix (its musical content differs, hence -CAPO not --variant).
-      compile_concert "$jobname" "$base" "$auxdir" || exit
-      echo "    ok: $jobname.pdf (concert pitch)"
-      capoaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname-CAPO"
-      mkdir -p "$capoaux" || exit
-      latexmk -pdf -auxdir="$capoaux" -jobname="$jobname-CAPO" "$base" || exit
-      echo "    + $jobname-CAPO.pdf (capo shapes)"
-    elif wants_transpose_pair "$base"; then
-      # Transpose song wanting both keys: the default PDF is the transposed sheet
-      # (native build, transpose=\SongTranspose from the .song's \providecommand);
-      # the as-written sheet gets the -OriginalKey suffix (different musical
-      # content, hence single hyphen like -CAPO).
-      latexmk -pdf -auxdir="$auxdir" "$base" || exit
-      echo "    ok: $jobname.pdf (transposed)"
-      okaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname-OriginalKey"
-      mkdir -p "$okaux" || exit
-      compile_original_key "$jobname-OriginalKey" "$base" "$okaux" || exit
-      echo "    + $jobname-OriginalKey.pdf (original key)"
-    else
-      latexmk -pdf -auxdir="$auxdir" "$base" || exit
-      echo "    ok: $jobname.pdf"
-    fi
+    # The default PDF. Capo / transposed / original-key sheets are no longer
+    # built here: each is its own wrapper .song (see header) and arrives as a
+    # separate $song in the loop below.
+    latexmk -pdf -auxdir="$auxdir" "$base" || exit
+    echo "    ok: $jobname.pdf"
 
     for variant in $(read_variants "$base"); do
       case $variant in
@@ -241,6 +156,14 @@ for song in "${songs[@]}"; do
   if [[ ! -f $song ]]; then
     echo "build-pdfs: skipping '$song' (not a file)" >&2
     failed+=("$song")
+    continue
+  fi
+
+  # Shared body includes are not standalone documents (no preamble); a wrapper
+  # \input's them. Skip them silently (not a failure) -- they reach here from
+  # the bare *.song glob, or if listed explicitly by mistake.
+  if [[ $song == *--input.song ]]; then
+    echo "build-pdfs: skipping '$song' (shared body include)"
     continue
   fi
 
