@@ -768,8 +768,10 @@
 % begin-document -- after all packages have loaded, so \providecommand sees the
 % real macro when hyperref IS present and stays quiet (no "Redefining" log line).
 \AtBeginDocument{\providecommand\texorpdfstring[2]{#1}}
-% Font for the optional second "Tuning:" line (see below).
-\newcommand\MyLStuningfont{\small\itshape}
+% Font for the optional second "Tuning:" line (see below), and the amount it is
+% pulled up toward the heading (applied as negative space above the line).
+\newcommand\MyLStuningfont{\small}
+\newcommand\MyLStuningraise{0.5\baselineskip}
 \definesongtitletemplate{mytitle}{%
   \section{\texorpdfstring{%
     \ifsongproperty{variant}{\MyLSvariantslot{\songproperty{variant}}}{}%
@@ -799,9 +801,11 @@
   % i.e. outside the heading -- so it never reaches the TOC entry, the PDF
   % bookmark, or the running head (all three derive from the \section title).
   % \nopagebreak ties it to the heading above; the paragraph after a KOMA section
-  % is unindented by default, so no \noindent is needed.
+  % is unindented by default, so no \noindent is needed.  The negative \vspace
+  % (\MyLStuningraise) pulls the line up to sit closer under the title.
   \ifsongproperty{tuning}{%
-    \nopagebreak{\MyLStuningfont Tuning: \MyLSformattuning{\songproperty{tuning}}}\par
+    \nopagebreak\vspace{-\MyLStuningraise}\nopagebreak
+    {\MyLStuningfont Tuning: \MyLSformattuning{\songproperty{tuning}}}\par
   }{}%
 }
 \setleadsheets{ title-template = mytitle }
