@@ -329,11 +329,12 @@
 \newcommand\moderate {\MyLSdifficultyglyph{RoyalBlue}{(0,0.5) -- (-0.45,-0.35) -- (0.45,-0.35) -- cycle}}
 \newcommand\difficult{\MyLSdifficultyglyph{black}{(0,0.5) -- (0.4,0) -- (0,-0.5) -- (-0.4,0) -- cycle}}
 
-% `difficulty' and `tuning' are not leadsheets built-ins (unlike title/band/tempo/key/capo),
-% so both must be registered with \definesongproperty before \songproperty{...} /
-% \ifsongproperty{...} work in the header template.
+% `difficulty', `tuning' and `variant' are not leadsheets built-ins (unlike
+% title/band/tempo/key/capo), so each must be registered with \definesongproperty
+% before \songproperty{...} / \ifsongproperty{...} work in the header template.
 \definesongproperty{difficulty}
 \definesongproperty{tuning}
+\definesongproperty{variant}
 
 % \fixedchord{<chord>} — renders a chord name with leadsheets' symbol formatting
 % (# -> sharp symbol, b -> flat symbol, etc.) WITHOUT applying any transposition.
@@ -678,19 +679,85 @@
 \ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
+% Variant slot (leading title marker)
+% ---------------------------------------------------------------------------
+% A song may carry an optional `variant' property -- a short monospace tag
+% naming which arrangement this sheet is (variant={pno.}, {gtr.}, {capo}, ...).
+% It prints as a bracketed, coloured monospace marker [pno.] at the very start of
+% the title header, to the LEFT of the title (font, colour and vertical lift are
+% the \MyLSvariant{font,color,raise} knobs below).
+%
+% The slot has a MINIMUM width of 6 monospace characters (= "[xxxx]": a 4-char
+% word in brackets), left-aligned.  So a variant of 4 characters or fewer fills
+% the box exactly, and across a songbook TOC every variant'd title indents to the
+% same x and lines up; a longer word grows the box and pushes its own title
+% further in (acceptable).  An EMPTY value (variant={}) still reserves the box --
+% a blank 6-char indent -- so a variant-less sibling of a variant'd song can be
+% aligned with it by writing variant={}.  An ABSENT variant prints nothing (title
+% flush left).  \ifsongproperty distinguishes the two in the template: it is built
+% on \prop_if_in: (leadsheets.library.properties.code.tex), i.e. it tests whether
+% the property KEY is set, not whether the value is non-empty -- so variant={} is
+% true (box) while an unset variant is false (no box).
+%
+% Robust, and measures at point of use: the title doubles as the songbook TOC
+% entry, so the heading -- and this macro -- is written to the .toc and re-typeset
+% there.  \NewDocumentCommand makes \MyLSvariantslot robust (it survives the write
+% intact, like \MyLSformattuning), and measuring the 6-char minimum inside the
+% macro lets the box adapt to the TOC's font context as well as the page's, so the
+% indent stays self-consistent in each.  Pure standard LaTeX3 boxes/dims -- no
+% leadsheets internals.
+\newcommand\MyLSvariantfont{\normalsize\ttfamily}
+\newcommand\MyLSvariantcolor{RoyalBlue}% colour of the whole tag (brackets + word)
+\newcommand\MyLSvariantraise{0.15ex}% lift, to sit the tag higher against the \large title
+\ExplSyntaxOn
+\tl_new:N \l__myls_variant_tl
+\box_new:N \l__myls_variant_box
+\box_new:N \l__myls_variant_ref_box
+\NewDocumentCommand \MyLSvariantslot { m }
+  {
+    % the marker: bracket a non-empty value (brackets included in the colour);
+    % leave an empty one blank so the box stays a plain indent
+    \tl_set:Ne \l__myls_variant_tl {#1}
+    \hbox_set:Nn \l__myls_variant_box
+      {
+        \MyLSvariantfont
+        \tl_if_empty:NF \l__myls_variant_tl
+          { \textcolor{\MyLSvariantcolor}{[\tl_use:N \l__myls_variant_tl]} }
+      }
+    % reference width = 6 monospace chars in the same font (all mono glyphs are
+    % equal width, so any 6 characters give the right measure)
+    \hbox_set:Nn \l__myls_variant_ref_box { \MyLSvariantfont 000000 }
+    % emit left-aligned and raised a little to sit higher against the \large
+    % title: pad to the 6-char minimum when narrower, else use the natural width
+    \dim_compare:nNnTF
+      { \box_wd:N \l__myls_variant_box } < { \box_wd:N \l__myls_variant_ref_box }
+      {
+        \raisebox{\MyLSvariantraise}
+          { \hbox_to_wd:nn { \box_wd:N \l__myls_variant_ref_box }
+              { \box_use:N \l__myls_variant_box \hfill } }
+      }
+      { \raisebox{\MyLSvariantraise}{\box_use:N \l__myls_variant_box} }
+    \space
+  }
+\ExplSyntaxOff
+
+% ---------------------------------------------------------------------------
 % Song title / header
 % ---------------------------------------------------------------------------
-% One-line header "Title (Band) Tempo Key" (key in brick-red), replacing the
-% class default of "Title" + a second "as played by: ..., key: ..." line.
-% \definesongtitletemplate is the documented mechanism.
+% One-line header "[variant] Title (Band) Key [capo] ..... [genre][difficulty]"
+% (variant a mono tag, key in brick-red, genre/difficulty pushed to the right
+% margin), replacing the class default of "Title" + a second "as played by: ...,
+% key: ..." line.  \definesongtitletemplate is the documented mechanism.
 % The header is a real \section (not \section*), so in a songbook it is picked
 % up automatically by \tableofcontents -- and the TOC line carries the full,
-% richly formatted header (key, tuning, tempo, ...), which is the whole point of
-% reusing the heading as the TOC text.  Under hyperref the section also seeds a
-% PDF bookmark, but a bookmark is a plain string: the spacing/content macros in
-% the header (\quad, \hfill, \fixedchord inside key=, \MyLSformattuning, ...) are
-% not valid there and would each log a "Token not allowed" warning (the font
-% commands -- \large, \sffamily, ... -- hyperref strips silently).  So the entire
+% richly formatted header (variant, key, capo, genre, difficulty), which is the
+% whole point of reusing the heading as the TOC text.  (Tuning is the one piece
+% deliberately kept OUT of the heading -- see the tuning line below.)  Under
+% hyperref the section also seeds a PDF bookmark, but a bookmark is a plain
+% string: the spacing/content macros in the header (\quad, \hfill, \fixedchord
+% inside key=, \MyLSvariantslot, ...) are not valid there and would each log a
+% "Token not allowed" warning (the font commands -- \large, \sffamily, ... --
+% hyperref strips silently).  So the entire
 % heading is wrapped in one \texorpdfstring: the FIRST (rich) branch is what gets
 % typeset and written to the TOC; the SECOND branch is a clean, hand-written
 % string (title, band) that hyperref uses for the bookmark.  Nothing inside the
@@ -701,20 +768,41 @@
 % begin-document -- after all packages have loaded, so \providecommand sees the
 % real macro when hyperref IS present and stays quiet (no "Redefining" log line).
 \AtBeginDocument{\providecommand\texorpdfstring[2]{#1}}
+% Font for the optional second "Tuning:" line (see below).
+\newcommand\MyLStuningfont{\small\itshape}
 \definesongtitletemplate{mytitle}{%
   \section{\texorpdfstring{%
-    \ifsongproperty{difficulty}{\songproperty{difficulty}\space}{}%
+    \ifsongproperty{variant}{\MyLSvariantslot{\songproperty{variant}}}{}%
     \large\sffamily\songproperty{title}\space\mdseries
     \ifsongproperty{band}{(\songproperty{band})}{}\normalsize\quad%
     \ifsongproperty{key}{\space\songproperty{key}}{}%
-    \ifsongproperty{tuning}{\space{(\MyLSformattuning{\songproperty{tuning}})}}{}%
     \ifsongproperty{capo}{\nobreakspace\notebox{capo \songproperty{capo}}}{}%
-    \ifsongproperty{tempo}{\space\itshape\songproperty{tempo}bpm\upshape}{}%
-    \ifsongproperty{genre}{\hfill\textcolor{ForestGreen}{\songproperty{genre}}}{}%
+    % genre and difficulty share the right margin, in that order.  Emit the
+    % \hfill that pushes them right only when at least one is present -- a lone
+    % trailing \hfill would split the stretch with the TOC linefill (see the
+    % \DeclareTOCStyleEntry note below).  Nested EXPANDABLE \ifsongproperty only:
+    % \ifanysongproperty is \NewDocumentCommand (not expandable), so it would not
+    % fold away when the heading is written to the .toc and would instead run at
+    % \tableofcontents time -- when the current-song context is gone -- giving the
+    % wrong answer in the TOC.
+    \ifsongproperty{genre}{%
+      \hfill\textcolor{ForestGreen}{\songproperty{genre}}%
+      \ifsongproperty{difficulty}{\space\songproperty{difficulty}}{}%
+    }{%
+      \ifsongproperty{difficulty}{\hfill\songproperty{difficulty}}{}%
+    }%
   }{%
     \songproperty{title}%
     \ifsongproperty{band}{ (\songproperty{band})}{}%
   }}%
+  % Tuning (rare): a second line BELOW the heading.  Emitted after \section{} --
+  % i.e. outside the heading -- so it never reaches the TOC entry, the PDF
+  % bookmark, or the running head (all three derive from the \section title).
+  % \nopagebreak ties it to the heading above; the paragraph after a KOMA section
+  % is unindented by default, so no \noindent is needed.
+  \ifsongproperty{tuning}{%
+    \nopagebreak{\MyLStuningfont Tuning: \MyLSformattuning{\songproperty{tuning}}}\par
+  }{}%
 }
 \setleadsheets{ title-template = mytitle }
 
