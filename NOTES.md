@@ -154,6 +154,54 @@ e.g. `Song-CAPO.song` + `%! variants: chords` → `Song-CAPO.pdf` and
 `Song-CAPO--chords.pdf`. The old "folding the two axes" future-work item is thus
 resolved by construction.
 
+### Song header / title template
+
+The header is one `\section{\texorpdfstring{<rich>}{<bookmark>}}` built by
+`\definesongtitletemplate{mytitle}` and set live with `\setleadsheets{title-template
+= mytitle}`. Using a real `\section` (not `\section*`) is deliberate: in a songbook
+the heading text is what `\tableofcontents` reuses as the TOC entry, so the rich
+one-line header *is* the TOC line. `secnumdepth=0` drops the section number;
+`\DeclareTOCStyleEntry[...]{section}{section}` gobbles the page number
+(`\MyLSgobblepagenumber`), zeroes `pagenumberwidth`, and weakens the linefill to
+`\hfil` (1fil) so it loses the tug-of-war with the template's own `\hfill` (1fill)
+that pushes genre/difficulty to the right margin — see that block's comment for the
+two-infinities trick. The `\texorpdfstring` first branch is typeset + written to the
+TOC; the second is a plain `title (band)` string for the hyperref bookmark.
+
+**Expandability is load-bearing.** Everything inside the `\section{}` must be
+*expandable* so it folds to literal tokens when KOMA `\protected@write`s the heading
+to the `.toc` (evaluated then, while the current-song context is valid).
+`\ifsongproperty` qualifies — it is `\DeclareExpandableDocumentCommand` built on
+`\prop_if_in:` (`leadsheets.library.properties.code.tex`). `\ifanysongproperty` does
+**not** (it is `\NewDocumentCommand`), so it would survive into the `.toc` and run at
+`\tableofcontents` time, when the song id is gone — wrong answer. That is why the
+genre/difficulty right-margin group guards its lone `\hfill` with *nested*
+`\ifsongproperty` rather than `\ifanysongproperty{genre,difficulty}`.
+
+**Variant slot (`\MyLSvariantslot`).** A robust (`\NewDocumentCommand`) macro so it
+survives the `.toc` write intact, then re-measures at typeset time so the box adapts
+to the TOC font as well as the page font. It sets the bracketed tag into a box,
+measures a 6-monospace-char reference box (any 6 mono glyphs — all equal width), and
+emits `\hbox_to_wd` left-aligned (content + `\hfill`) when narrower than the
+reference, else natural width; the result is `\raisebox`-lifted. Two subtleties:
+(1) the empty-vs-absent distinction relies on `\ifsongproperty` testing *key
+presence*, not value emptiness, so `variant={}` is true (→ blank box, an alignment
+indent) while an unset `variant` is false (→ nothing); the macro itself still guards
+the brackets with `\tl_if_empty:N` so an empty value yields a truly blank box, not
+`[]`. (2) The colour wraps the whole `[word]` *inside* the macro (brackets included),
+so the call site passes a **plain** `\songproperty{variant}` — wrapping the value in
+`\textcolor` at the call site would make the emptiness test always-false (it sees
+`\textcolor{...}{...}`, never empty) and break the blank-box case. Knobs:
+`\MyLSvariantfont` / `\MyLSvariantcolor` / `\MyLSvariantraise`.
+
+**Tuning line.** Emitted *after* the `\section{}` (still inside the template), so it
+is ordinary body text below the heading — structurally invisible to the TOC entry,
+the bookmark, and the running head (all three derive from the `\section` title).
+`\nopagebreak` ties it to the heading; a negative `\vspace{-\MyLStuningraise}` pulls
+it up snug under the title; the value goes through `\MyLSformattuning` (accidentals
+rendered, never transposed — its own mechanism). Knobs: `\MyLStuningfont` /
+`\MyLStuningraise`. `tempo` was dropped from the header entirely in this redesign.
+
 ### Deferred — the key label following transposition
 
 The title template prints `\songproperty{key}` raw, so a `transpose=` wrapper's
@@ -162,8 +210,11 @@ the original-key wrapper happens to read correctly. Making the key follow the
 transposition is the same conditional flagged for capo — the stock template uses
 `\writechord{\songproperty{key}}` (`songs.code.tex:481`), which transposes — so:
 branch the key print on `\ifsongproperty{capo}` (capo → raw concert key; else →
-`\writechord`, which transposes for `transpose=` and is identity otherwise). The
-reference `.sty`'s `\fixedchord` (vestigial, unported) may be relevant here.
+`\writechord`, which transposes for `transpose=` and is identity otherwise).
+`\fixedchord` is now ported and live (it suppresses transposition for one chord, so
+`key={\fixedchord{Gm}}` renders the accidental without moving it); it is the
+opposite of what this conditional needs but shares the same transpose-boolean
+plumbing, so it is the worked example to crib from.
 
 ### Even-page padding & songbook back-to-contents link
 
