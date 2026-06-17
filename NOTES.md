@@ -64,6 +64,19 @@ this key. (A patch making `place_above` emit `\rule` instead of
 `\skip_horizontal` would revive it, but that means editing package internals —
 against the project's design goals — so avoid unless specifically wanted.)
 
+### `\input` filenames inside `song` must not contain `_`
+
+When extracting a song body to a shared file that thin wrapper `.song`s `\input`
+(the variant-by-wrapper strategy — one `Song--input.song` body, several
+`Song.song` / `Song-CAPO.song` wrappers that each `\input` it inside their own
+`\begin{song}[]{…}`), the included filename **must not contain an underscore**.
+Inside the `song` environment leadsheets makes `_` an *active character* (the
+`_{C}` chord-only token syntax), so `\input{Song__input.song}` tokenizes the
+`__` as chord markup and the filename is mangled → compilation breaks. Use `--`
+instead: `Song--input.song`. (The body file itself is never compiled directly; it
+has no preamble — just the `\begin{verse}…` sections — and is read only via
+`\input` from a wrapper.)
+
 ## Resolved
 
 - PR#46 fix for `leadsheets.library.songs.code.tex` placed in `~/repos/1sys/tex/songs/`,
