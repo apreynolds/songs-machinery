@@ -206,6 +206,67 @@ branch the key print on `\ifsongproperty{capo}` (capo → raw concert key; else 
 `\writechord`, which transposes for `transpose=` and is identity otherwise). The
 reference `.sty`'s `\fixedchord` (vestigial, unported) may be relevant here.
 
+### Even-page padding & songbook back-to-contents link
+
+Three tools for two-page (spread) digital viewing, all in `MyLeadsheets.sty`'s
+"Even-page / odd-start padding" + "Songbook back to contents link" sections.
+Authoring contract is CLAUDE.md's *Songbooks & even-page output*; this is the how.
+
+**Shared parity arithmetic.** After a `\clearpage` the `page` counter holds the
+number the *next* shipped page will get, i.e. `(pages-shipped + 1)`. So an **odd
+counter ⇒ an even number of pages has shipped** (and vice versa) — the one fact
+both padders test. Verified empirically; my first guess at the direction was
+backwards, hence the `\ifodd\value{page}\else …\fi` shape (pad on *even*). The
+parity is always measured on the natural content **before** any blank is added,
+so the decision is identical on every run — no oscillation under latexmk. (A
+`\pageref{LastPage}`-style test would instead count the blank it just added and
+flip parity each rebuild.) The blank itself is `\MyLSblankpage` =
+`\null\thispagestyle{empty}\clearpage` (`\null` forces the empty page to ship).
+
+**`\ForceEvenPages`** — `\newif\ifMyLSforceeven` + an `\AtEndDocument` hook: if
+opted in, pad the *total* to even. Standalone only; in a songbook `\AtEndDocument`
+fires once for the whole book, and a song's own `\ForceEvenPages` never runs
+anyway (`gobble-preamble` is true in the `external` library —
+`leadsheets.library.external.code.tex`, `\__leadsheets_gobble_preamble:wn`, which
+also disables `\usepackage`/`\RequirePackage` and rewrites `\end{document}`→
+`\endinput`).
+
+**`\clearoddpage`** — `\clearpage` then pad iff the next page would be even, so the
+following block starts odd. This is what KOMA's `\cleardoubleoddpage` does, but
+that gates its blank behind `\if@twoside` (`scrartcl.cls`:1239–1245,
+`\cleardoubleoddpageusingstyle`), and this class is single-sided; going `twoside`
+would swap margins and restore headers, so we pad explicitly.
+
+**`\bookinclude{file}`** = `\clearoddpage\includeleadsheet{file}\MyLStochint`. The
+hint runs *after* the include returns (at the song's `\end{document}`→`\endinput`),
+so it sits at the end of that song's content, before the next `\bookinclude`'s
+`\clearoddpage`. Folding it into the wrapper (not per-song) means an individual
+`.song` carries nothing and a standalone compile cannot be affected.
+
+**`\MyLStochint` — the fit test (the hard part).** Place a back-to-TOC `\hyperlink`
+at bottom-right *iff* it fits, else nothing — must **never** force a new page.
+Mechanism: `\par\penalty0` (the `\penalty0` makes the page builder account for the
+last line so `\pagetotal` is current), then remaining `= \pagegoal − \pagetotal`
+(`\pagegoal` reads `\maxdimen` on a still-empty page → treated as a full
+`\textheight`); if remaining `> \ht+\dp` of the link box `+ \MyLStocgap`
+(`2\baselineskip` safety), emit `\vfill\nointerlineskip\hbox to\hsize{\hfill\box0}`.
+`\vfill` drops it to the bottom; the next `\clearpage` flushes it. Because slack is
+measured first and we append strictly less than it, the page can't overfill.
+Verified by a line-count sweep across the 1- and 2-page boundaries (textheight
+777.9pt, baselineskip 17pt): page count with-link always equalled the natural
+count, and the link was *skipped* exactly on the near-full last pages (N=44,45 and
+89,90) and *placed* where there was room. On the real songbook the GoTo annotation
+resolved to the TOC page (`mutool show … N` → `/S /GoTo /D [6 0 R /Fit]`).
+
+**Catcode gotcha (cost a build).** `@` is **not** a catcode letter in this
+`.sty` — the whole package uses the `\MyLS…` prefix, never `\MyLS@…`. A first
+attempt naming the helper `\MyLS@blankpage` failed at load ("Missing
+`\begin{document}`", with `@blankpage` typeset as text); likewise the fit test
+must use scratch registers `\dimen0`/`\box0`, **not** `\dimen@`/`\z@`. An
+`\AtBeginDocument` `\providecommand\hyperlink`/`\hypertarget` fallback keeps the
+songbook macros harmless if `hyperref` is somehow absent (won't clobber the real
+ones, which load earlier).
+
 ## Tooling / debugging
 
 ### Vimtex quickfix behaviour
