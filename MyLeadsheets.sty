@@ -951,3 +951,15 @@
 % in, then drop the fit-tested back-to-contents link on its last page.  A song
 % that should NOT get a link can still use \clearoddpage\includeleadsheet directly.
 \newcommand\bookinclude[1]{\clearoddpage\includeleadsheet{#1}\MyLStochint}
+
+% ---------------------------------------------------------------------------
+% Debug aid: make overfull \hbox lines visible in the PDF
+% ---------------------------------------------------------------------------
+% TeX normally only *reports* an overfull \hbox in the log (a line whose content
+% runs past the right margin).  Setting the primitive \overfullrule to a nonzero
+% width makes it also *draw* a solid black rule in the margin beside each such
+% line in the output -- the same mechanism the `draft' class option turns on
+% (draft => 5pt, final => 0pt).  Kept off by default so finished sheets stay
+% clean; a song opts in by putting \MyLSshowoverfull in its preamble.  The
+% optional argument overrides the rule width, e.g. \MyLSshowoverfull[10pt].
+\newcommand\MyLSshowoverfull[1][5pt]{\setlength\overfullrule{#1}}
