@@ -77,6 +77,41 @@ instead: `Song--input.song`. (The body file itself is never compiled directly; i
 has no preamble — just the `\begin{verse}…` sections — and is read only via
 `\input` from a wrapper.)
 
+### `\newcommand` with `#1` parameters can't be defined inside `song`
+
+**Symptom:** A *parameterised* macro defined after `\begin{song}` silently
+misbehaves — the parameter is never substituted. E.g.
+`\newcommand{\ChorusLyrics}[1][]{\measures[#1]{…}}` then `\ChorusLyrics[repeat]`
+produces **normal** bars, not repeat bars (the elegant "one command, optional
+style" idea — `\Foo` vs `\Foo[repeat]`). No error is raised. Probing shows `#1`
+arrives as the literal characters `#1`, so `\measures[#1]` passes the *string*
+"#1" as the bar style, which isn't `repeat`/`final`, so it falls through to normal
+bars. (No-argument `\newcommand`s — how the reuse/factoring pattern works — are
+**fine**; this only bites macros that use `#`.)
+
+**Cause:** Inside the `song` environment leadsheets makes `#` an ordinary
+character (so chord sharps like `F#`, `C#` can be typed literally in `^{F#}`).
+With `#` no longer catcode 6, a `\newcommand` body defined there treats `#1` as
+literal text, not a parameter slot — the declared `[1]` argument is grabbed and
+then silently dropped.
+
+**Workarounds tried, all worse than the problem:**
+- Restore `\catcode`\#=6` in a group around the def — the song body is processed
+  **twice** (a measuring pass + the real pass), so the def re-runs → `Command …
+  already defined`, and group scoping fights global persistence.
+- Share the *cells* as a no-`#` macro and wrap (`\measures{\ChorusCells}`) — the
+  repeat bar does fire, but leadsheets' chord splitter chokes
+  (`Argument of \__leadsheets_set_chord:nwn has an extra }`); it needs the literal
+  `{^{C}word}` cells, not a macro that expands to them.
+
+**Workaround / takeaway:** Don't parameterise macros inside `song`. For a section
+that recurs with a *different bar style* (a `[repeat]`/`[final]` last chorus), just
+write that one section **inline** with the style baked in (`\measures[repeat]{…}`)
+— the DRY cost is a single section, and the chord splitter prefers literal cells
+anyway. The `pr-factor-song-repeats` tool deliberately never emits parameterised
+commands for this reason; its near-miss report only *flags* "identical except
+`[repeat]`" so you handle that spot by hand.
+
 ## Resolved
 
 - PR#46 fix for `leadsheets.library.songs.code.tex` placed in `~/repos/1sys/tex/songs/`,
