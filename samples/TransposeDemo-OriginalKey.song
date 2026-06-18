@@ -5,7 +5,7 @@
 
 % Original-key wrapper -- no transpose=, so the chords print as transcribed (C).
 % Shares the body with TransposeDemo.song via \input{TransposeDemo--input.song}.
-% See CLAUDE.md "Output variants".
+% See CLAUDE.md "Output views and arrangements".
 \begin{song}[]{title={Transpose Demo}, key={C}}
   \input{TransposeDemo--input.song}
 \end{song}

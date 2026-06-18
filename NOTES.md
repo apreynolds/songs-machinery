@@ -67,7 +67,7 @@ against the project's design goals — so avoid unless specifically wanted.)
 ### `\input` filenames inside `song` must not contain `_`
 
 When extracting a song body to a shared file that thin wrapper `.song`s `\input`
-(the variant-by-wrapper strategy — one `Song--input.song` body, several
+(the arrangement-by-wrapper strategy — one `Song--input.song` body, several
 `Song.song` / `Song-CAPO.song` wrappers that each `\input` it inside their own
 `\begin{song}[]{…}`), the included filename **must not contain an underscore**.
 Inside the `song` environment leadsheets makes `_` an *active character* (the
@@ -88,13 +88,13 @@ has no preamble — just the `\begin{verse}…` sections — and is read only vi
 ## Mechanism reference
 
 Internals of the IMPLEMENTED output features. The *condensed* authoring
-contracts (what to type in a `.song`) live in CLAUDE.md's "Output variants" and
+contracts (what to type in a `.song`) live in CLAUDE.md's "Output views and arrangements" and
 "Songbooks" sections; this is the full how-it-works, output mapping, and rationale
 for when the mechanism itself needs touching.
 
-### Variant-by-wrapper (capo / transpose / multiple keys)
+### Arrangement-by-wrapper (capo / transpose / multiple keys)
 
-Any variant whose *musical content* differs — capo shapes vs concert, a real key
+Any arrangement whose *musical content* differs — capo shapes vs concert, a real key
 change, or several keys of one song — is a **separate wrapper `.song`**, not a
 magic comment. The song body (the `\begin{verse}…` sections, **no preamble**)
 lives in `Song--input.song`; each wrapper sets its own `\begin{song}[…]{…}`
@@ -103,15 +103,15 @@ options and `\input`s that body. `build-pdfs` compiles each wrapper to one PDF a
 `samples/Uberlin{,-CAPO}.song` and `samples/TransposeDemo{,-OriginalKey}.song`.
 
 This **replaced** the earlier magic-comment machinery — all removed: the
-`%! capo-pair` / `%! transpose-pair` comments, the injected `\def\ConcertVariant`
-/ `\def\SongTranspose` overrides, the `.sty`'s `\ConcertVariant`/`\ifMyLSconcert`
+`%! capo-pair` / `%! transpose-pair` comments, the injected `\def\ConcertArrangement`
+/ `\def\SongTranspose` overrides, the `.sty`'s `\ConcertArrangement`/`\ifMyLSconcert`
 block, and `build-pdfs`'s `wants_capo_pair` / `wants_transpose_pair` /
 `compile_concert` / `compile_original_key`.
 
 **Why the rewrite.** The injection approach produced *one* `.song`'s siblings via
 forced `latexmk -g` rebuilds that spliced `\def`s ahead of `\input`, and needed
 the `\providecommand`/macro indirection (`transpose=\SongTranspose`) purely so the
-injected `\def` could win. Wrappers make each variant an ordinary standalone
+injected `\def` could win. Wrappers make each arrangement an ordinary standalone
 document: no injection, no `-g`, a literal `transpose=2`, and — the real payoff —
 different versions drop straight into a songbook (`\bookinclude` each wrapper),
 which the single-source approach couldn't do.
@@ -188,8 +188,8 @@ the rename (see the caveat above). We chose kernel + no-colliding-names instead.
     smoke-test a one-song book first, but no conflict is anticipated.
 
 **Composes with the presentation axis.** A wrapper may itself carry
-`%! variants: chords` to get the chords/lyrics siblings of *that* key/capo —
-e.g. `Song-CAPO.song` + `%! variants: chords` → `Song-CAPO.pdf` and
+`%! views: chords` to get the chords/lyrics siblings of *that* key/capo —
+e.g. `Song-CAPO.song` + `%! views: chords` → `Song-CAPO.pdf` and
 `Song-CAPO--chords.pdf`. The old "folding the two axes" future-work item is thus
 resolved by construction.
 
@@ -217,21 +217,21 @@ to the `.toc` (evaluated then, while the current-song context is valid).
 genre/difficulty right-margin group guards its lone `\hfill` with *nested*
 `\ifsongproperty` rather than `\ifanysongproperty{genre,difficulty}`.
 
-**Variant slot (`\MyLSvariantslot`).** A robust (`\NewDocumentCommand`) macro so it
+**Arrangement slot (`\MyLSarrangementslot`).** A robust (`\NewDocumentCommand`) macro so it
 survives the `.toc` write intact, then re-measures at typeset time so the box adapts
 to the TOC font as well as the page font. It sets the bracketed tag into a box,
 measures a 6-monospace-char reference box (any 6 mono glyphs — all equal width), and
 emits `\hbox_to_wd` left-aligned (content + `\hfill`) when narrower than the
 reference, else natural width; the result is `\raisebox`-lifted. Two subtleties:
 (1) the empty-vs-absent distinction relies on `\ifsongproperty` testing *key
-presence*, not value emptiness, so `variant={}` is true (→ blank box, an alignment
-indent) while an unset `variant` is false (→ nothing); the macro itself still guards
+presence*, not value emptiness, so `arrangement={}` is true (→ blank box, an alignment
+indent) while an unset `arrangement` is false (→ nothing); the macro itself still guards
 the brackets with `\tl_if_empty:N` so an empty value yields a truly blank box, not
 `[]`. (2) The colour wraps the whole `[word]` *inside* the macro (brackets included),
-so the call site passes a **plain** `\songproperty{variant}` — wrapping the value in
+so the call site passes a **plain** `\songproperty{arrangement}` — wrapping the value in
 `\textcolor` at the call site would make the emptiness test always-false (it sees
 `\textcolor{...}{...}`, never empty) and break the blank-box case. Knobs:
-`\MyLSvariantfont` / `\MyLSvariantcolor` / `\MyLSvariantraise`.
+`\MyLSarrangementfont` / `\MyLSarrangementcolor` / `\MyLSarrangementraise`.
 
 **Tuning line.** Emitted *after* the `\section{}` (still inside the template), so it
 is ordinary body text below the heading — structurally invisible to the TOC entry,
@@ -287,7 +287,7 @@ remarks block — is pulled in. (Untested: a `remarks` `\vfill` combined with
 `\bookinclude`'s own `\MyLStochint` `\vfill` on the same last page — both stretch,
 could interact; standalone is the target use.)
 
-**Shared remarks across wrappers** (variant-by-wrapper): put
+**Shared remarks across wrappers** (arrangement-by-wrapper): put
 `\begin{remarks}…\end{remarks}` in a `Song--remarks--input.song` and `\input` it
 **outside** each wrapper's `\begin{song}`. Because that `\input` is outside the song
 env, the `_`-in-filename gotcha (active `_` inside `song`) does **not** apply there,
@@ -391,18 +391,18 @@ compilations) or `~/.cache/latexmk/${project_name}_$hash/` (Generate* commands).
 ## build-pdfs — status
 
 `build-pdfs` (repo root, `~/repos/1sys/tex/songs/build-pdfs`) compiles each
-`.song` to its default PDF, then reads the `%! variants:` magic comment in the
+`.song` to its default PDF, then reads the `%! views:` magic comment in the
 **leading** comment block (first non-blank, non-`%` line ends the block, mirroring
 the TeX-engine magic comment) to build presentation siblings. It **skips
 `*--input.song`** (shared bodies — no preamble). Capo / transpose / multiple-key
 sheets are no longer the script's concern: each is its own wrapper `.song` (see
-*Variant-by-wrapper* above) that arrives as a separate file in the build loop. The
+*Arrangement-by-wrapper* above) that arrives as a separate file in the build loop. The
 script carries full inline comments; this is just the orientation and the live
-status. See *Output variants* in CLAUDE.md for the authoring contracts.
+status. See *Output views and arrangements* in CLAUDE.md for the authoring contracts.
 
 The only sibling-producing magic comment:
 
-    %! variants: chords, lyrics   presentation axis -> Song--<variant>.pdf
+    %! views: chords, lyrics   presentation axis -> Song--<view>.pdf
 
 **Built:**
 - Default PDF for each `.song` (always produced); `*--input.song` skipped.
@@ -411,8 +411,8 @@ The only sibling-producing magic comment:
 - Aux files to `~/.cache/latexmk/{parent-dir}-{jobname}/` via `-auxdir`, sharing
   vimtex's incremental-build database; the PDF lands next to the source. No
   `latexmk -c` (the `.fdb_latexmk` database is worth keeping).
-- **chords variant** — `compile_variant()` injects `\def\Variant{chords}` (forced
-  `-g`), producing `Song--chords.pdf`. The `.sty` honours `\Variant` via two
+- **chords view** — `compile_view()` injects `\def\View{chords}` (forced
+  `-g`), producing `Song--chords.pdf`. The `.sty` honours `\View` via two
   parallel families: every lyric verse type (`verse`, `chorus`, …) has a **chart
   twin** `<type>chords` (`versechords`, `choruschords`, …), each a real
   `\newversetype` whose default `template=` is its counterpart's coloured box. In
@@ -423,34 +423,34 @@ The only sibling-producing magic comment:
   the chords sheet, a missing twin leaks a chart into the lyric sheet. Because the
   twin is a real verse type it reproduces its counterpart's colour *and* label
   (`V1:`/`C1:`/`In:`) automatically. Verified on `samples/ChordsVariantDemo.song`.
-- **lyrics variant** — same `compile_variant()` path (the `case` arm is just
-  `chords | lyrics`), injecting `\def\Variant{lyrics}` for `Song--lyrics.pdf`. The
-  `.sty` flips `print-chords=false` for this variant only; the family selection is
+- **lyrics view** — same `compile_view()` path (the `case` arm is just
+  `chords | lyrics`), injecting `\def\View{lyrics}` for `Song--lyrics.pdf`. The
+  `.sty` flips `print-chords=false` for this view only; the family selection is
   the same as the default build (lyric bodies print, chart twins swallowed). See
-  *Variants from one `.song`* item 2 for the `^`/`_` detail.
+  *Views from one `.song`* item 2 for the `^`/`_` detail.
 
-**Pending:** the `phone` variant. (Folding the presentation axis together with
+**Pending:** the `phone` view. (Folding the presentation axis together with
 capo/transpose is no longer pending — it falls out of the wrapper model: put
-`%! variants: chords` in a capo/transpose wrapper and that wrapper gets its own
+`%! views: chords` in a capo/transpose wrapper and that wrapper gets its own
 `--chords`/`--lyrics` siblings, e.g. `Song-CAPO.song` → `Song-CAPO--chords.pdf`.)
 The `-CAPO`/`-OriginalKey` (single-hyphen, *different musical content*) vs
 `--chords`/`--lyrics` (double-hyphen, *different presentation*) suffix split is the
 convention to preserve.
 
-## Future work — output variants from one `.song`
+## Future work — output views from one `.song`
 
 The reference produced several PDFs from one source via a tangle of `\newtoggle`
 flags that cross-set each other (`LyricsWithChords`, `LyricsNoChords`,
 `ChordProgression`, `ChordsAndLyrics`, `SmallLyrics`, `Structure`) and four
 content-gating macros (`\chords`, `\lyrics`, `\lyricswithchords`, `\structure`),
 each `\iftoggle{…}{#1}{\@gobble{#1}}`. The cost landed in the `.song`: the same
-material was typed 3–4× per section, once per variant. The overhaul should reach
-the same outputs with far less duplication. Planned variants:
+material was typed 3–4× per section, once per view. The overhaul should reach
+the same outputs with far less duplication. Planned views:
 
 1. **Default — lyrics + chords.** The `^{C}word` lyric body. Baseline. *Done.*
-2. **Lyrics-only — DONE, the `lyrics` variant.** The **same** `^{C}word` body with
+2. **Lyrics-only — DONE, the `lyrics` view.** The **same** `^{C}word` body with
    leadsheets' `print-chords=false`. No duplication — one body serves both 1 and 2.
-   Selected by `\def\Variant{lyrics}`; renders the same family as the default build
+   Selected by `\def\View{lyrics}`; renders the same family as the default build
    (lyric types print, chart twins swallowed) and only flips `print-chords`. Key
    detail: `print-chords=false` suppresses **only** `^{C}word` chords (`^` =
    `\getorprintchord`, gated by `print-chords` in `\leadsheets_place_above`); the
@@ -459,7 +459,7 @@ the same outputs with far less duplication. Planned variants:
    instrumental sections (a `\measures` line of `_{C}` chords, no `^{}word`) keep
    their progression — the sensible outcome, and it falls out of the documented
    `^`/`_` split with no extra code. Verified on `samples/ChordsVariantDemo.song`.
-3. **Chart-only (no lyrics) — DONE, the `chords` variant.** A **separate** body
+3. **Chart-only (no lyrics) — DONE, the `chords` view.** A **separate** body
    built with `\measures` inside per-type chart twins `\begin{versechords}` …
    (see *build-pdfs — status*).
    The `.song` carries a chord skeleton in addition to the lyric body — i.e. some
@@ -474,24 +474,24 @@ the same outputs with far less duplication. Planned variants:
 4. **Phone-format.** *Pending.* Long-paper geometry (tall narrow page), otherwise
    the default lyrics + chords layout. (Reference: `\Longpaper`.)
 
-Variant selection is a single `\def\Variant{…}` command-line flag (injected by
-`build-pdfs`) reduced to **one** clean variant state in the `.sty`, not the
+View selection is a single `\def\View{…}` command-line flag (injected by
+`build-pdfs`) reduced to **one** clean view state in the `.sty`, not the
 reference's six cross-set toggles — realised for `chords` and `lyrics` (each a
 small `\newif`/`\ifx` block in the "select which family renders" section, plus the
 `print-chords` switch at the file end); `phone` extends the same lever.
 
 The **Reference's `Structure` option is abandoned** — not being carried forward.
 
-Possible **class option for grayscale** for any variant (phone excepted, but no
+Possible **class option for grayscale** for any view (phone excepted, but no
 strong reason either way) — for B&W printing, mirroring the reference's
 `\BlackAndWhite` branch that swapped tinted section boxes for ruled ones.
 
 ### `.song` API — parallel section environments (DONE)
 
-**Implemented.** The `chords` variant uses **per-type parallel environments**: the
+**Implemented.** The `chords` view uses **per-type parallel environments**: the
 lyric body stays in `verse`/`chorus`/…, and the chart goes in a parallel twin
 `<type>chords` (`versechords`, `choruschords`, `introchords`, …). The active
-variant prints exactly one family; the other's bodies are swallowed (xparse `+b`).
+view prints exactly one family; the other's bodies are swallowed (xparse `+b`).
 Usage:
 
     \begin{verse}
@@ -512,7 +512,7 @@ reproduces the lyric section's colour *and*
 label (`V1:`/`C1:`/`In:`) automatically — the labels line up section-for-section
 because the sections are authored in parallel. `choruschords` deliberately drops
 chorus's italic (it takes the global upright/bold `verses-format`). Defined in the
-`.sty`'s "Output variant: chords" block: the `\newversetype` table, a
+`.sty`'s "Output view: chords" block: the `\newversetype` table, a
 `\setleadsheets` block mirroring the labels, and the two suppression `clist`s.
 (Naming chosen `<type>chords` over the earlier `chartverse` sketch.)
 
@@ -552,10 +552,10 @@ lyric verse in the chart (that's the whole reason charts are a separate body).
 
 Two things to decide when building `[both]`:
 
-- **Behaviour in the lyrics-only variant.** A chord-only solo has nothing left
+- **Behaviour in the lyrics-only view.** A chord-only solo has nothing left
   once chords are suppressed. Options: omit the section, leave it blank, or show
   a short note (the reference used `\notebox{8 bar solo}` here).
-- **The token name.** With three variants, `[both]` presumes the
+- **The token name.** With three views, `[both]` presumes the
   lyrics+chords/chart pair specifically; a clearer token (e.g. `[shared]`, or an
   explicit `[in=lyrics,chart]` form that scales to any subset) may read better.
 

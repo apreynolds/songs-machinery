@@ -11,7 +11,7 @@
 %
 % NB key label: the title template prints key={C} raw, so this transposed sheet
 % still shows "C" though its chords sound in D -- key-label-follows-transpose is
-% deferred (see NOTES.md). See CLAUDE.md "Output variants".
+% deferred (see NOTES.md). See CLAUDE.md "Output views and arrangements".
 \begin{song}[transpose=2]{title={Transpose Demo}, key={C}}
   \input{TransposeDemo--input.song}
 \end{song}

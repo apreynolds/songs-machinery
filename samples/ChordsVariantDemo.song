@@ -1,14 +1,14 @@
-%! variants: chords, lyrics
+%! views: chords, lyrics
 \documentclass[fontsize=14pt,DIV=calc]{leadsheet}
 \usepackage{MyLeadsheets}
 
 \begin{document}
 
-\begin{song}[]{title={Chords Variant Demo}, band={Test}, tempo={120}, key = {Em}}
+\begin{song}[]{title={Chords View Demo}, band={Test}, tempo={120}, key = {Em}}
 
   % Each section is authored as a pair: the lyric body in verse/chorus/intro/...
   % and the chart body in its <type>chords twin.  The default build prints the
-  % lyric bodies; the chords variant prints the twins, each in the SAME coloured
+  % lyric bodies; the chords view prints the twins, each in the SAME coloured
   % box and with the SAME label (In:/V1:/C1:/Out:) as its lyric counterpart.
 
   \begin{intro}

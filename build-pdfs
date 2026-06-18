@@ -8,18 +8,18 @@
 # ~/.cache/latexmk/, matching the aux_dir scheme used by vimtex (see the note
 # by the latexmk call).
 #
-# Variants via magic comments: a leading comment block in the .song file can
+# Views via magic comments: a leading comment block in the .song file can
 # request extra PDFs, e.g.
 #
-#     %! variants: chords, lyrics
+#     %! views: chords, lyrics
 #
-# Each listed variant produces SONG--<variant>.pdf, built by injecting
-# \def\Variant{<variant>} so MyLeadsheets.sty selects that variant's bodies: the
-# chords variant prints the chart twins and suppresses the lyric verse types; the
-# lyrics variant prints the lyric verse bodies with the chords stripped
-# (print-chords=false); the debug variant prints BOTH families in one sheet (lyric
+# Each listed view produces SONG--<view>.pdf, built by injecting
+# \def\View{<view>} so MyLeadsheets.sty selects that view's bodies: the
+# chords view prints the chart twins and suppresses the lyric verse types; the
+# lyrics view prints the lyric verse bodies with the chords stripped
+# (print-chords=false); the debug view prints BOTH families in one sheet (lyric
 # bodies and their chart twins) for proofing line lengths/spacing. `chords',
-# `lyrics' and `debug' are wired up (see compile_variant()); `phone' is planned.
+# `lyrics' and `debug' are wired up (see compile_view()); `phone' is planned.
 # The magic comment must sit in the leading comment block,
 # before \documentclass (TeX magic-comment convention).
 #
@@ -56,18 +56,18 @@ case "${1:-}" in
     ;;
 esac
 
-# Read requested variants from a .song file's leading magic-comment block.
-# Recognises lines of the form `%! variants: a, b, c` (flexible spacing) and
-# echoes one variant token per line. Scanning stops at the first line that is
+# Read requested views from a .song file's leading magic-comment block.
+# Recognises lines of the form `%! views: a, b, c` (flexible spacing) and
+# echoes one view token per line. Scanning stops at the first line that is
 # neither blank nor a `%` comment, so only the leading block is consulted.
-read_variants() {
+read_views() {
   local file=$1 line val tok
   while IFS= read -r line; do
     # First real (non-blank, non-comment) line ends the magic-comment block.
     if [[ -n $line && ${line#\%} == "$line" ]]; then
       break
     fi
-    if [[ $line =~ ^%![[:space:]]*variants[[:space:]]*:[[:space:]]*(.*)$ ]]; then
+    if [[ $line =~ ^%![[:space:]]*views[[:space:]]*:[[:space:]]*(.*)$ ]]; then
       val=${BASH_REMATCH[1]}
       IFS=',' read -ra toks <<<"$val"
       for tok in "${toks[@]}"; do
@@ -80,27 +80,27 @@ read_variants() {
   done <"$file"
 }
 
-# Build a presentation variant (chords, lyrics or debug) of a song: inject
-# \def\Variant{NAME} so MyLeadsheets.sty selects that variant's bodies (chords
+# Build a presentation view (chords, lyrics or debug) of a song: inject
+# \def\View{NAME} so MyLeadsheets.sty selects that view's bodies (chords
 # prints the chart twins and suppresses the lyric types; lyrics prints the lyric
 # bodies with chords stripped; debug prints both families). Output is SONG--NAME.pdf.
 # Forced with -g (the
 # source is unchanged, so latexmk's up-to-date check would otherwise skip the
 # rebuild). The -pdflatex override mirrors the global latexmkrc invocation, with
-# the variant name interpolated into the injected \def (hence double quotes and
+# the view name interpolated into the injected \def (hence double quotes and
 # escaped backslashes, unlike the fixed-\def helpers above).
-compile_variant() {
-  local jobname=$1 src=$2 auxdir=$3 variant=$4
-  latexmk -pdf -g -auxdir="$auxdir" -jobname="$jobname--$variant" \
-    -pdflatex="pdflatex --shell-escape %O -synctex=0 -interaction=nonstopmode \"\\def\\Variant{$variant} \\input{%S}\"" \
+compile_view() {
+  local jobname=$1 src=$2 auxdir=$3 view=$4
+  latexmk -pdf -g -auxdir="$auxdir" -jobname="$jobname--$view" \
+    -pdflatex="pdflatex --shell-escape %O -synctex=0 -interaction=nonstopmode \"\\def\\View{$view} \\input{%S}\"" \
     "$src"
 }
 
-# Build the default PDF for one .song file, then any magic-comment variants.
+# Build the default PDF for one .song file, then any magic-comment views.
 # Runs in a subshell so the cd (and the aux-dir scheme that depends on cwd)
 # stays local to this build. Returns non-zero if the default compile fails.
 build_song() {
-  local song=$1 dir base jobname auxdir variant varaux
+  local song=$1 dir base jobname auxdir view varaux
   dir=$(dirname -- "$song")
   base=$(basename -- "$song")
   jobname=${base%.song}
@@ -123,16 +123,16 @@ build_song() {
     latexmk -pdf -auxdir="$auxdir" "$base" || exit
     echo "    ok: $jobname.pdf"
 
-    for variant in $(read_variants "$base"); do
-      case $variant in
+    for view in $(read_views "$base"); do
+      case $view in
         chords | lyrics | debug)
-          varaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname--$variant"
+          varaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname--$view"
           mkdir -p "$varaux" || exit
-          compile_variant "$jobname" "$base" "$varaux" "$variant" || exit
-          echo "    + $jobname--$variant.pdf ($variant)"
+          compile_view "$jobname" "$base" "$varaux" "$view" || exit
+          echo "    + $jobname--$view.pdf ($view)"
           ;;
         *)
-          echo "build-pdfs: variant '$variant' not yet supported, skipping" >&2
+          echo "build-pdfs: view '$view' not yet supported, skipping" >&2
           ;;
       esac
     done
