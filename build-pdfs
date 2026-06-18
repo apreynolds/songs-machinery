@@ -17,8 +17,10 @@
 # \def\Variant{<variant>} so MyLeadsheets.sty selects that variant's bodies: the
 # chords variant prints the chart twins and suppresses the lyric verse types; the
 # lyrics variant prints the lyric verse bodies with the chords stripped
-# (print-chords=false). `chords' and `lyrics' are wired up (see compile_variant());
-# `phone' is planned. The magic comment must sit in the leading comment block,
+# (print-chords=false); the debug variant prints BOTH families in one sheet (lyric
+# bodies and their chart twins) for proofing line lengths/spacing. `chords',
+# `lyrics' and `debug' are wired up (see compile_variant()); `phone' is planned.
+# The magic comment must sit in the leading comment block,
 # before \documentclass (TeX magic-comment convention).
 #
 # Different pitches/keys of one song (capo shapes vs concert, or a real key
@@ -78,10 +80,11 @@ read_variants() {
   done <"$file"
 }
 
-# Build a presentation variant (chords or lyrics) of a song: inject
+# Build a presentation variant (chords, lyrics or debug) of a song: inject
 # \def\Variant{NAME} so MyLeadsheets.sty selects that variant's bodies (chords
 # prints the chart twins and suppresses the lyric types; lyrics prints the lyric
-# bodies with chords stripped). Output is SONG--NAME.pdf. Forced with -g (the
+# bodies with chords stripped; debug prints both families). Output is SONG--NAME.pdf.
+# Forced with -g (the
 # source is unchanged, so latexmk's up-to-date check would otherwise skip the
 # rebuild). The -pdflatex override mirrors the global latexmkrc invocation, with
 # the variant name interpolated into the injected \def (hence double quotes and
@@ -122,7 +125,7 @@ build_song() {
 
     for variant in $(read_variants "$base"); do
       case $variant in
-        chords | lyrics)
+        chords | lyrics | debug)
           varaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname--$variant"
           mkdir -p "$varaux" || exit
           compile_variant "$jobname" "$base" "$varaux" "$variant" || exit

@@ -660,10 +660,13 @@
 \renewcommand\thechoruschords{C\arabic{choruschords}}
 
 % --- select which family renders ----------------------------------------------
-% \Variant is one of: default, chords, lyrics (phone planned).  Only `chords'
-% renders the chart twins; `lyrics' and `default' both print the lyric bodies and
-% swallow the twins -- they differ only in print-chords (set near the file end):
-% `lyrics' additionally suppresses the ^{C} chords, leaving words alone.
+% \Variant is one of: default, chords, lyrics, debug (phone planned).  `chords'
+% renders the chart twins and swallows the lyric bodies; `lyrics' and `default'
+% print the lyric bodies and swallow the twins -- they differ only in print-chords
+% (set near the file end): `lyrics' additionally suppresses the ^{C} chords,
+% leaving words alone.  `debug' swallows NOTHING, printing both families in one
+% sheet (chords on, like default) for proofing line lengths / spacing -- see the
+% three-way selection below.
 \providecommand\Variant{default}
 \def\MyLSchordsflag{chords}
 \newif\ifMyLSchords
@@ -671,25 +674,34 @@
 \def\MyLSlyricsflag{lyrics}
 \newif\ifMyLSlyrics
 \ifx\Variant\MyLSlyricsflag \MyLSlyricstrue \else \MyLSlyricsfalse \fi
+\def\MyLSdebugflag{debug}
+\newif\ifMyLSdebug
+\ifx\Variant\MyLSdebugflag \MyLSdebugtrue \else \MyLSdebugfalse \fi
 \ExplSyntaxOn
-\ifMyLSchords
-  % chords build: lyric types swallow their body; chart twins render.
-  \clist_map_inline:nn
-    {
-      verse, verse*, chorus, chorus*, intro, intro*, outro, interlude,
-      bridge, info, solo, solo*, prechorus, prechorus*,
-      lift, postchorus, custompart
-    }
-    { \RenewDocumentEnvironment {#1} { O{} +b } {} {} }
+\ifMyLSdebug
+  % debug build: swallow NOTHING -- both the lyric types and their chart twins
+  % render, so one sheet shows everything (proofing line lengths, spacing, and
+  % bar alignment of lyric body + chord chart without flipping between PDFs).
 \else
-  % every other build: chart twins swallow their body; lyric types render.
-  \clist_map_inline:nn
-    {
-      versechords, choruschords, introchords, outrochords, interludechords,
-      bridgechords, solochords, prechoruschords, postchoruschords,
-      liftchords, custompartchords
-    }
-    { \RenewDocumentEnvironment {#1} { O{} +b } {} {} }
+  \ifMyLSchords
+    % chords build: lyric types swallow their body; chart twins render.
+    \clist_map_inline:nn
+      {
+        verse, verse*, chorus, chorus*, intro, intro*, outro, interlude,
+        bridge, info, solo, solo*, prechorus, prechorus*,
+        lift, postchorus, custompart
+      }
+      { \RenewDocumentEnvironment {#1} { O{} +b } {} {} }
+  \else
+    % every other build: chart twins swallow their body; lyric types render.
+    \clist_map_inline:nn
+      {
+        versechords, choruschords, introchords, outrochords, interludechords,
+        bridgechords, solochords, prechoruschords, postchoruschords,
+        liftchords, custompartchords
+      }
+      { \RenewDocumentEnvironment {#1} { O{} +b } {} {} }
+  \fi
 \fi
 \ExplSyntaxOff
 
