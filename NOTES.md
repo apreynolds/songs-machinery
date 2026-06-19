@@ -551,21 +551,34 @@ The only sibling-producing magic comment:
   full vs phone on a standalone song (1 tall page vs 2 letter pages) and a
   two-song `\bookinclude` book (phone 3 pp / no blanks vs full 6 pp / padded).
 
-- **grayscale view** — `compile_view()` injects `\def\View{grayscale}`, producing
-  `Song--grayscale.pdf`. Content is **identical to `full`** (same family path:
-  grayscale is neither chords/lyrics/debug/phone, so the lyric bodies render with
-  the chart twins swallowed). The colour is killed in two keyed-on-`\ifMyLSgrayscale`
-  spots near the top of the `.sty`: (a) `xcolor` is loaded with the **`monochrome`**
-  package option (it sets `\colors@false`, so all `\color`/`\textcolor`/coloured
-  TikZ glyphs fall back to black — verified: chords, noteboxes, `\bg`, and the
-  difficulty/genre/arrangement markers all print black); (b) `\myleadsheetsboxbegin`
-  takes its `colback` through `\MyLSboxcolback`, which expands to `white` under
-  grayscale instead of the part-type tint, so the section boxes are plain white
-  (boxrule stays 0mm — no border added). The white override is independent of
+- **grayscale modifier (`-gray`)** — an *orthogonal* "colour off" axis that
+  composes with the content views, exposed as the tokens `full-gray`,
+  `chords-gray`, `lyrics-gray` (plus bare `gray` = `full-gray`). It is **not** a
+  fourth content view: the `.sty`'s view block (just before the content-axis
+  `\ifx` detection) strips a recognised gray token, sets `\ifMyLSgray`, and
+  reduces `\View` to its bare content name (`full`/`chords`/`lyrics`). So every
+  downstream branch — family selection, **remarks `[chords]` filtering**,
+  `print-chords` — sees only the base name and is untouched; e.g. `lyrics-gray`
+  strips over-word chords exactly like `lyrics`. (Keeping the modifier off `\View`
+  is what preserves remarks filtering, which is an exact-string `\clist_if_in` of
+  `\View` against the `[chords,…]` list — `grayscale-chords` would have broken it.)
+  Colour is killed in two keyed-on-`\ifMyLSgray` spots: (a) `xcolor` loads with the
+  **`monochrome`** package option (it sets `\colors@false`, so all `\color`/
+  `\textcolor`/coloured TikZ glyphs fall back to black — verified: chords,
+  noteboxes, `\bg`, difficulty/genre/arrangement all print black); (b)
+  `\myleadsheetsboxbegin` routes `colback` through `\MyLSboxcolback`, which expands
+  to `white` under gray instead of the part-type tint, so section boxes are plain
+  white (boxrule stays 0mm — no border). The white override is independent of
   `monochrome` (belt-and-suspenders): a 6%-gray tint would survive monochrome as a
-  faint gray, which the explicit `white` avoids. Verified by rendering
-  `ManOnMoon--grayscale.pdf` to PNG — black text, white boxes, no black fill.
-  Deliberately knob-free (rare, print-only).
+  faint gray, which the explicit `white` avoids.
+  - *build-pdfs side.* The loop accepts `gray | chords-gray | lyrics-gray` (and
+    `full-gray`), injecting `\def\View{<token>}` and naming `Song--<token>.pdf` —
+    **except** `full-gray`, which it normalises to `gray` first (`[[ $view ==
+    full-gray ]] && view=gray`) so the file is `Song--gray.pdf`, not
+    `Song--full-gray.pdf`. Verified end-to-end (`%! views: full-gray, chords-gray,
+    lyrics-gray` → `Song--gray.pdf` + two `--*-gray.pdf`) and by rendering each to
+    PNG (black text, white boxes, correct base content per view). Deliberately
+    knob-free (rare, print-only).
 
 The presentation axis still folds together with capo/transpose via the wrapper
 model: put

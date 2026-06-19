@@ -187,12 +187,18 @@ Mechanism internals and rationale are in `NOTES.md`.
   on the tall layout, and the blanks would be very long), and the back-to-contents
   link is enlarged (`\large` vs the other views' `\footnotesize`). The only knobs
   are `\MyLSphoneheight` (default `22in`) and `\MyLStoclinksize` (set to `\large`
-  under phone). The **`grayscale` view** (`Song--grayscale.pdf`) prints the
-  **same content as `full`** on the usual letterpaper layout but with **all colour
-  switched off** for plain printing: it loads `xcolor` with the `monochrome`
-  option, so every coloured glyph (chord symbols, noteboxes, `\bg` text,
-  difficulty/genre/arrangement markers) falls back to black ink, and the coloured
-  section boxes are forced to a **white** background (no tint, no border added).
+  under phone). The **grayscale modifier** is *orthogonal* to the content axis:
+  it switches **all colour off** for plain printing and composes with full/chords/
+  lyrics as the view tokens **`full-gray`**, **`chords-gray`**, **`lyrics-gray`**
+  (plus bare `gray` = `full-gray`). It is implemented as a true modifier — the
+  build strips the `-gray` part, sets `\ifMyLSgray`, and runs the **base** content
+  view unchanged — so e.g. `lyrics-gray` strips over-word chords exactly like
+  `lyrics`. Colour is killed two ways: `xcolor` loads with the `monochrome` option
+  (every coloured glyph — chord symbols, noteboxes, `\bg` text, difficulty/genre/
+  arrangement markers — falls back to black ink) and the coloured section boxes are
+  forced to a **white** background (no tint, no border added). Filenames:
+  `chords-gray`/`lyrics-gray` keep their name (`Song--chords-gray.pdf`), but
+  `full-gray` (and `gray`) both output `Song--gray.pdf` (the `full-` is dropped).
   Deliberately minimal — there are no knobs.
   - *Shared instrumental sections.* A lyric-free, chart-shaped section (an
     intro/outro/solo that is just a `\measures` line) has **identical** content in
