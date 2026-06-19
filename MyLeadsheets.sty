@@ -1010,9 +1010,17 @@
 % (leadsheets.library.external.code.tex), so everything between \begin{document}
 % and \end{document} — including a post-\end{song} remarks block — is pulled in.
 %
-% \vfill at the top drops the block to the page bottom; it simply flows onto a
-% new page if it does not fit (acceptable per spec).  Restyle via the \MyLSremarks*
-% knobs.
+% POSITIONING.  The block is NOT pushed to the page bottom.  An earlier design
+% put \vfill at the top to drop it to the foot of the last page, but that made
+% the block's position depend on how full the page was: on a song that fills the
+% page it sat snugly under the last section, but on a short song the \vfill blew
+% open a large gap and left the block marooned in mid-page whitespace.  Instead a
+% fixed, slightly-rubber \addvspace{\MyLSremarksskip} separates it from the song
+% body, so it always sits just below the last section; if it does not fit it
+% flows to the TOP of the next page (the leading \addvspace is discarded there),
+% not stranded at the foot.  The body is set in \MyLSremarksbodyfont (\small by
+% default) to subordinate it to the song.  Restyle/space via the \MyLSremarks*
+% knobs (\setlength\MyLSremarksskip{...} for the gap).
 %
 % VIEW FILTERING.  An optional comma-list of view names restricts the block to
 % those views: \begin{remarks}[chords] prints only in the chords view,
@@ -1027,6 +1035,11 @@
 \newcommand\MyLSremarkslabel{Remarks}
 \newcommand\MyLSremarksheadfont{\large\sffamily\bfseries}
 \newcommand\MyLSremarksrule{\par\hrule\vskip4pt\par}
+% Gap above the block (slightly rubber so a near-full page can absorb a little),
+% and the body font (smaller than the song body to subordinate it).
+\newlength\MyLSremarksskip
+\setlength\MyLSremarksskip{\bigskipamount}
+\newcommand\MyLSremarksbodyfont{\small}
 \ExplSyntaxOn
 \prg_generate_conditional_variant:Nnn \clist_if_in:Nn { Ne } { TF }
 \clist_new:N \l__myls_remarks_views_clist
@@ -1050,12 +1063,11 @@
   {
     \__myls_remarks_show:nTF {#1}
       {
-        \par \vfill
+        \par \addvspace{\MyLSremarksskip}
         \setlength \parindent {0pt}
         \MyLSremarksrule
         { \MyLSremarksheadfont \MyLSremarkslabel \par }
-        #2
-        \par
+        { \MyLSremarksbodyfont #2 \par }
       }
       { }
   }

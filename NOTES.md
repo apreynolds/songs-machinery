@@ -318,15 +318,22 @@ song properties, so "outside" now costs nothing — there's no id to recover.) T
 header uses `\hrule` in vertical mode (after `\par`) and sets `\parindent=0pt`
 locally.
 
-**Placement / songbook.** `\par\vfill` at the env top drops the block to the page
-bottom; the document's final `\clearpage` (or the next `\bookinclude`'s) lets the
-glue stretch. It flows onto a new page if it doesn't fit. In a songbook the block
-is included for free: `\includeleadsheet` rewrites the file's
-`\end{document}`→`\endinput` (`external.code.tex:43–49`), so all body content
-between `\begin{document}` and `\end{document}` — including a post-`\end{song}`
-remarks block — is pulled in. (Untested: a `remarks` `\vfill` combined with
-`\bookinclude`'s own `\MyLStochint` `\vfill` on the same last page — both stretch,
-could interact; standalone is the target use.)
+**Placement / songbook.** `\par\addvspace{\MyLSremarksskip}` at the env top sets
+the block off from the song body by a fixed (slightly rubber) gap — it is **not**
+pushed to the page bottom. The original design used `\par\vfill` to drop it to the
+foot of the last page, but the position then depended on how full the page was: a
+page-filling song looked fine, but a short song blew the `\vfill` open and left the
+block marooned in mid-page whitespace (confirmed by rendering a short song —
+BangAndBlame — against a full one — BeginTheBegin — in `rem-songbook`). The fixed
+gap keeps it just below the last section in both cases; if it doesn't fit it flows
+to the **top** of the next page (a leading `\addvspace` is discarded at a page top),
+not stranded at the foot. The body is set in `\MyLSremarksbodyfont` (`\small`).
+Dropping `\vfill` also removes the old (then-untested) worry about it fighting
+`\bookinclude`'s own `\MyLStochint` `\vfill` on the same last page — verified clean
+in a songbook. In a songbook the block is included for free: `\includeleadsheet`
+rewrites the file's `\end{document}`→`\endinput` (`external.code.tex:43–49`), so all
+body content between `\begin{document}` and `\end{document}` — including a
+post-`\end{song}` remarks block — is pulled in.
 
 **Shared remarks across wrappers** (arrangement-by-wrapper): put
 `\begin{remarks}…\end{remarks}` in a `Song--remarks--input.song` and `\input` it
@@ -336,7 +343,8 @@ though `--` stays consistent with convention.
 
 **Header is not a `\section`.** Deliberately a styled paragraph
 (`\MyLSremarksheadfont`), not `\section*`, so it never reaches the TOC, a PDF
-bookmark, or a running head. Knobs: `\MyLSremarkslabel` / `…headfont` / `…rule`.
+bookmark, or a running head. Knobs: `\MyLSremarkslabel` / `…headfont` / `…rule` /
+`…bodyfont`, plus the length `\MyLSremarksskip` (gap above; `\setlength`).
 
 ### Backing-vocal de-emphasis (`\bg` / `\bgoff`)
 

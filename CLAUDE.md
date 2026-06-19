@@ -95,13 +95,17 @@ Quick orientation for reading a `.song` (details and rationale are in
     environment below.)
 - **Remarks block** — a `remarks` environment, written **after** `\end{song}`
   (outside the song env, so prose has normal catcodes and no song-body bolding),
-  appends a block to the **bottom** of the song's last page: a header `Remarks`,
-  then the environment's own free-text body. A bare `\begin{remarks}\end{remarks}`
-  prints just the header. The block reads **nothing** from the song (pure free
-  text — no title, tempo, or property pulled in), so it has no song-id plumbing and
-  no coupling to the preceding song. It auto-positions with `\vfill` (flows to a new
-  page if it doesn't fit) and travels into a songbook like any post-`\end{song}`
-  body. Restyle via the `\MyLSremarks*` knobs (`…label`, `…headfont`, `…rule`).
+  appends a block **just below the song's last section**: a header `Remarks`,
+  then the environment's own free-text body (set in `\small` to subordinate it).
+  A bare `\begin{remarks}\end{remarks}` prints just the header. The block reads
+  **nothing** from the song (pure free text — no title, tempo, or property pulled
+  in), so it has no song-id plumbing and no coupling to the preceding song. It is
+  separated from the body by a fixed (slightly rubber) `\addvspace`, **not** pushed
+  to the page bottom — an earlier `\vfill` design left the block marooned in
+  mid-page whitespace on short songs; if it doesn't fit it flows to the **top** of
+  the next page. It travels into a songbook like any post-`\end{song}` body.
+  Restyle via the `\MyLSremarks*` knobs (`…label`, `…headfont`, `…rule`,
+  `…bodyfont`, and `\setlength\MyLSremarksskip{…}` for the gap above).
   - **View filtering** — an optional comma-list of view names limits the block to
     those views: `\begin{remarks}[chords]` prints only in the `chords` view,
     `\begin{remarks}[chords,full]` in those two. A bare `\begin{remarks}` (empty
