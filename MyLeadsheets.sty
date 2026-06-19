@@ -513,6 +513,7 @@
 \int_new:N  \l__myls_total_int
 \int_new:N  \l__myls_index_int
 \bool_new:N \l__myls_first_measure_bool
+\bool_new:N \l__myls_bg_bool              % backing-vocals de-emphasis (\bg ... \bgoff)
 \cs_new_protected:Npn \__myls_openbar:n  #1
   { \str_case:nnF {#1} { {repeat} {\leftrepeat} {repeatstart} {\leftrepeat} } {\normalbar} }
 \cs_new_protected:Npn \__myls_closebar:n #1
@@ -522,7 +523,8 @@
 % #1 = the minimum-width target for this measure; #2 = the measure content.
 \cs_new_protected:Npn \__myls_measurebox:nn #1#2
   {
-    \hbox_set:Nn \l__myls_measure_box { \kern\measurepad #2 ~ \unskip \kern\measurepad }
+    \hbox_set:Nn \l__myls_measure_box
+      { \kern\measurepad \bool_if:NT \l__myls_bg_bool {\MyLSbgfont} #2 ~ \unskip \kern\measurepad }
     \dim_compare:nNnTF { \box_wd:N \l__myls_measure_box } < {#1}
       { \hbox_to_wd:nn {#1} { \box_use:N \l__myls_measure_box \hfil } }
       { \box_use:N \l__myls_measure_box }
@@ -570,7 +572,45 @@
         \__myls_measurebox:nn { \l__myls_target_dim } {##1}
       }
     \__myls_closebar:n {#1}
+    \bool_gset_false:N \l__myls_bg_bool   % \bg is per-line: auto-off at the line end
   }
+\ExplSyntaxOff
+
+% ---------------------------------------------------------------------------
+% Backing-vocals de-emphasis:  \bg ... \bgoff
+% ---------------------------------------------------------------------------
+% Renders lyric text a touch smaller and grey -- for backing vocals worth keeping
+% but worth subordinating, e.g. "(follow me, don't follow me)".  A SWITCH, not a
+% wrapping \bg{...}, on purpose: backing vocals usually run across several measure
+% cells, and wrapping each cell leaves unbalanced "(" / ")" inside braces (awkward
+% to type, and it upsets editor brace/paren matching).
+%
+% Each measure cell is set in its own box (its own group), so a plain font switch
+% would not carry from one cell to the next.  \bg therefore sets a GLOBAL flag that
+% \__myls_measurebox honours (greying every cell while set) and also applies the
+% font for the rest of its own cell; \bgoff clears the flag AND restores normal
+% text (\MyLSbgreset) for the rest of its own cell.  The flag is auto-cleared at
+% the end of every \measures line (above), so it cannot bleed past the line even if
+% \bgoff is forgotten -- a deliberate per-line scope; re-open with \bg on the next
+% line if a backing-vocal run continues.  Chords are unaffected: the chord format
+% resets size and colour itself, so only the lyric text greys.  Retune the look via
+% \MyLSbgfont / \MyLSbgcolor.
+%
+%   \measures{%
+%     {^{E5} \bg (follow me, don't}
+%     {^{E5} follow me) \bgoff}
+%     {^{G} GOT my SPINE I've}
+%     {^{D} GOT my ORANGE CRUSH}
+%   }
+\newcommand\MyLSbgcolor{gray}
+\newcommand\MyLSbgfont{\small\color{\MyLSbgcolor}}
+% \MyLSbgreset undoes \MyLSbgfont: \bgoff applies it so text AFTER a mid-cell
+% \bgoff returns to normal (the measure box greys the whole cell, so clearing the
+% flag alone wouldn't restore the rest of the current cell).
+\newcommand\MyLSbgreset{\normalsize\normalcolor}
+\ExplSyntaxOn
+\newcommand\bg    { \bool_gset_true:N  \l__myls_bg_bool \MyLSbgfont }
+\newcommand\bgoff { \bool_gset_false:N \l__myls_bg_bool \MyLSbgreset }
 \ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
