@@ -177,7 +177,17 @@ Mechanism internals and rationale are in `NOTES.md`.
   still print (the documented `^`=print-or-place / `_`=write split), so an
   instrumental section keeps its progression. The **`debug` view**
   (`Song--debug.pdf`) prints **both** families in one sheet, for proofing line
-  lengths and spacing without flipping between PDFs. (`phone` view still planned.)
+  lengths and spacing without flipping between PDFs. The **`phone` view**
+  (`Song--phone.pdf`) prints the **same content as `full`** (lyric bodies, chords
+  over words) but on a taller page — 8.5×22in instead of letterpaper, *same width,
+  same 0.3cm margins, same font* — so a song that fits the usual "two letter pages"
+  soft target lands on a single tall "phone page" read as one scroll (longer songs
+  flow onto a second phone page). Two songbook behaviours change in this view:
+  `\clearoddpage`/`\bookinclude` skip their odd-page padding (page parity is moot
+  on the tall layout, and the blanks would be very long), and the back-to-contents
+  link is enlarged (`\large` vs the other views' `\footnotesize`). The only knobs
+  are `\MyLSphoneheight` (default `22in`) and `\MyLStoclinksize` (set to `\large`
+  under phone).
   - *Shared instrumental sections.* A lyric-free, chart-shaped section (an
     intro/outro/solo that is just a `\measures` line) has **identical** content in
     both the lyric type and its twin. There is no `[both]` option; instead, to

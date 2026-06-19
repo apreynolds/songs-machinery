@@ -33,8 +33,41 @@
 % standard LaTeX route (newtxtt still supplies \ttfamily, used by chords/measures).
 \renewcommand*\familydefault{\sfdefault}
 
+% ---------------------------------------------------------------------------
+% Output view selection  (\View)
+% ---------------------------------------------------------------------------
+% A single command-line lever -- `\def\View{...}', injected by build-pdfs before
+% \input -- picks one view.  One of: full (default), chords, lyrics, debug, phone.
+% Detected ONCE here, near the top, so the geometry block just below (the `phone'
+% view needs a taller page), the songbook helpers (phone skips odd-page padding),
+% the back-to-contents link (larger in phone) and the family-selection block much
+% further down can all branch on the same \newif flags.  This block only
+% establishes \View and its booleans.
+\providecommand\View{full}
+\newif\ifMyLSchords \def\MyLSchordsflag{chords} \ifx\View\MyLSchordsflag \MyLSchordstrue \fi
+\newif\ifMyLSlyrics \def\MyLSlyricsflag{lyrics} \ifx\View\MyLSlyricsflag \MyLSlyricstrue \fi
+\newif\ifMyLSdebug  \def\MyLSdebugflag{debug}   \ifx\View\MyLSdebugflag  \MyLSdebugtrue  \fi
+\newif\ifMyLSphone  \def\MyLSphoneflag{phone}   \ifx\View\MyLSphoneflag  \MyLSphonetrue  \fi
+
+% ---------------------------------------------------------------------------
+% Page geometry  (geometry kept on purpose -- see CLAUDE.md design goals)
+% ---------------------------------------------------------------------------
+% Default views share one tight letterpaper layout (8.5x11in, 0.3cm margins).
+% The `phone' view is deliberately the *same* layout -- same width, same margins,
+% same font -- but on a taller page (8.5x22in), so a song that fits the usual
+% "two letter pages" soft target lands on a single tall "phone page" read as one
+% continuous scroll.  Songs longer than that simply flow onto a second phone
+% page.  CONTENT is identical to the `full' view (lyric bodies, chords over
+% words -- see the family-selection block below, where `phone' takes the same
+% path as `full').  Only the height is a knob:
 \newcommand\MyMargin{0.3cm}
-\RequirePackage[margin=\MyMargin,letterpaper]{geometry}
+\newcommand\MyLSphoneheight{22in}    % phone-page height (~ two letter pages tall)
+\ifMyLSphone
+  \RequirePackage[paperwidth=8.5in,paperheight=\MyLSphoneheight,%
+                  margin=\MyMargin]{geometry}
+\else
+  \RequirePackage[margin=\MyMargin,letterpaper]{geometry}
+\fi
 
 % ---------------------------------------------------------------------------
 % Extra song-part types
@@ -745,23 +778,15 @@
 \renewcommand\thechoruschords{C\arabic{choruschords}}
 
 % --- select which family renders ----------------------------------------------
-% \View is one of: full, chords, lyrics, debug (phone planned).  `chords'
-% renders the chart twins and swallows the lyric bodies; `lyrics' and `full'
-% print the lyric bodies and swallow the twins -- they differ only in print-chords
-% (set near the file end): `lyrics' additionally suppresses the ^{C} chords,
-% leaving words alone.  `debug' swallows NOTHING, printing both families in one
-% sheet (chords on, like default) for proofing line lengths / spacing -- see the
-% three-way selection below.
-\providecommand\View{full}
-\def\MyLSchordsflag{chords}
-\newif\ifMyLSchords
-\ifx\View\MyLSchordsflag \MyLSchordstrue \else \MyLSchordsfalse \fi
-\def\MyLSlyricsflag{lyrics}
-\newif\ifMyLSlyrics
-\ifx\View\MyLSlyricsflag \MyLSlyricstrue \else \MyLSlyricsfalse \fi
-\def\MyLSdebugflag{debug}
-\newif\ifMyLSdebug
-\ifx\View\MyLSdebugflag \MyLSdebugtrue \else \MyLSdebugfalse \fi
+% \View is one of: full, chords, lyrics, debug, phone -- detected near the top of
+% this file (the geometry block needs the `phone' flag early).  `chords' renders
+% the chart twins and swallows the lyric bodies; `lyrics', `full' and `phone'
+% print the lyric bodies and swallow the twins.  `lyrics' alone differs in
+% print-chords (set near the file end), suppressing the ^{C} chords to leave the
+% words; `phone' differs from `full' only in page height (above), not content,
+% so it takes the same family path here.  `debug' swallows NOTHING, printing both
+% families in one sheet (chords on, like default) for proofing line lengths /
+% spacing -- see the three-way selection below.
 \ExplSyntaxOn
 \ifMyLSdebug
   % debug build: swallow NOTHING -- both the lyric types and their chart twins
@@ -1134,9 +1159,16 @@
 % KOMA's \cleardoubleoddpage would do, but that gates its blank behind
 % \if@twoside (scrartcl.cls), and this class is single-sided; going twoside would
 % swap margins and restore headers, so we pad explicitly instead.
+%
+% The `phone' view degrades this to a plain \clearpage (no odd-page padding):
+% page parity is meaningless on the tall single-page-per-song phone layout, and
+% the padding would only insert very long blank pages between songs.  Because
+% \bookinclude calls \clearoddpage, this one guard covers the whole songbook.
 \newcommand\clearoddpage{%
   \clearpage
-  \ifodd\value{page}\else \MyLSblankpage \fi
+  \ifMyLSphone\else
+    \ifodd\value{page}\else \MyLSblankpage \fi
+  \fi
 }
 
 % ---------------------------------------------------------------------------
@@ -1158,8 +1190,17 @@
 }
 \newcommand\MyLStocname{MyLStoc}
 \newcommand\MyLStoctarget{\hypertarget{\MyLStocname}{}}
-% appearance -- redefine in the songbook preamble to restyle
-\providecommand\MyLStoclinktext{\textsf{\footnotesize$\hookleftarrow$\,Contents}}
+% appearance -- redefine in the songbook preamble to restyle.  The link size is a
+% separate knob so the `phone' view can enlarge it (the rest of the views keep
+% the discreet \footnotesize) without the songbook having to override the whole
+% link text; the fit-test below measures the actual box, so a larger link is
+% accounted for automatically.
+\ifMyLSphone
+  \newcommand\MyLStoclinksize{\large}
+\else
+  \newcommand\MyLStoclinksize{\footnotesize}
+\fi
+\providecommand\MyLStoclinktext{\textsf{\MyLStoclinksize$\hookleftarrow$\,Contents}}
 % safety margin kept clear below the last line before the link is allowed to fit
 \newcommand\MyLStocgap{2\baselineskip}
 
