@@ -390,7 +390,15 @@
 %
 % Use case: the `key' song property, when you want to display the concert-pitch
 % key regardless of transpose= or capo= settings.  Example:
-%   key={\fixedchord{F#m}}
+%   key={\fixedchord{F\sharp m}}   key={\fixedchord{B\flat}}
+%
+% ACCIDENTALS: write \sharp / \flat, NOT a literal `#'.  A raw `#' renders fine
+% in a standalone sheet, but the heading is reused verbatim as the songbook TOC
+% entry and written to the .aux/.toc; under hyperref the `#' is stringified and
+% DOUBLED to `##', which re-tokenises on read-back as a parameter character and
+% errors ("You can't use macro parameter character #' in horizontal mode").
+% \sharp/\flat are control sequences (no `#' byte to double) and are exactly the
+% glyphs \writechord converts `#'/`b' into, so the printed result is identical.
 %
 % Implementation note: transposition in \writechord is gated on two private
 % expl3 booleans in the leadsheets package:

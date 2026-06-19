@@ -63,7 +63,13 @@ Quick orientation for reading a `.song` (details and rationale are in
   (dropped in the redesign). Properties:
   - `title`, `band` — leadsheets built-ins. `key` prints **raw** (concert pitch,
     never transposed); wrap an accidental key in `\fixedchord{…}` so the sharp/flat
-    glyph renders, e.g. `key={\fixedchord{Gm}}`. `capo=N` adds a `\notebox{capo N}`
+    glyph renders, e.g. `key={\fixedchord{Gm}}`. **Write accidentals as `\sharp` /
+    `\flat`, never a literal `#`** — e.g. `key={\fixedchord{F\sharp m}}`,
+    `key={\fixedchord{B\flat}}`. A raw `#` compiles standalone but breaks in a
+    songbook: the heading is reused as the TOC entry and a literal `#` doubles to
+    `##` in the `.toc` under hyperref, erroring on read-back. `\sharp`/`\flat` are
+    the exact glyphs `\writechord` converts `#`/`b` into, so output is identical
+    (see `\fixedchord` in `MyLeadsheets.sty`). `capo=N` adds a `\notebox{capo N}`
     label after the key (fingering shapes, *not* a key change — see "Output
     views and arrangements").
   - `genre` and `difficulty` share the **right margin**, in that order (genre as
