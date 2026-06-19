@@ -509,10 +509,26 @@ The only sibling-producing magic comment:
   the same as the default build (lyric bodies print, chart twins swallowed). See
   *Views from one `.song`* item 2 for the `^`/`_` detail.
 
-**Pending:** the `phone` view. (Folding the presentation axis together with
-capo/transpose is no longer pending — it falls out of the wrapper model: put
+- **phone view** — `compile_view()` injects `\def\View{phone}`, producing
+  `Song--phone.pdf`. Content is **identical to `full`** (same family path in the
+  `.sty`: phone is neither chords/lyrics/debug, so the chart twins are swallowed
+  and the lyric bodies render, with `print-chords` left true). The *only* `.sty`
+  differences, all keyed on the early `\ifMyLSphone`: (a) geometry loads
+  `paperheight=\MyLSphoneheight` (`22in`) at letter width / `\MyMargin` instead of
+  `letterpaper`; (b) `\clearoddpage` degrades to a plain `\clearpage` (no odd-page
+  padding — `\bookinclude` calls it, so the whole songbook is covered); (c) the
+  back-to-contents link size `\MyLStoclinksize` is `\large` not `\footnotesize`.
+  No font-size or margin change (an earlier draft bumped to 20pt + long paper à la
+  the reference's `\Longpaper`, but the simpler "same layout, taller page" matches
+  the two-letter-pages soft target and keeps the log clean — the 20pt bump dragged
+  in `T1/cmr size not available` and `Very small head height` warnings). Verified
+  full vs phone on a standalone song (1 tall page vs 2 letter pages) and a
+  two-song `\bookinclude` book (phone 3 pp / no blanks vs full 6 pp / padded).
+
+The presentation axis still folds together with capo/transpose via the wrapper
+model: put
 `%! views: chords` in a capo/transpose wrapper and that wrapper gets its own
-`--chords`/`--lyrics` siblings, e.g. `Song-CAPO.song` → `Song-CAPO--chords.pdf`.)
+`--chords`/`--lyrics` siblings, e.g. `Song-CAPO.song` → `Song-CAPO--chords.pdf`.
 The `-CAPO`/`-OriginalKey` (single-hyphen, *different musical content*) vs
 `--chords`/`--lyrics` (double-hyphen, *different presentation*) suffix split is the
 convention to preserve.
@@ -552,14 +568,20 @@ the same outputs with far less duplication. Planned views:
    would be a fragile parser over lyric token-soup (`\ul{}`, `\ssp`, math, bare
    letters); the reference hand-wrote the chart for exactly this reason. The
    chord skeleton is short, and it's the representation a band actually wants.
-4. **Phone-format.** *Pending.* Long-paper geometry (tall narrow page), otherwise
-   the `full` lyrics + chords layout. (Reference: `\Longpaper`.)
+4. **Phone-format — DONE, the `phone` view.** The **same** `full` lyrics + chords
+   layout on a taller page (8.5×22in vs letterpaper; same width, margins, font).
+   Selected by `\def\View{phone}`; renders the same family as `full`. Deliberately
+   simpler than the reference's `\Longpaper` (which also bumped to 20pt) — see the
+   *phone view* bullet under *build-pdfs — status* for the three `\ifMyLSphone`
+   differences and why the font bump was dropped.
 
 View selection is a single `\def\View{…}` command-line flag (injected by
 `build-pdfs`) reduced to **one** clean view state in the `.sty`, not the
-reference's six cross-set toggles — realised for `chords` and `lyrics` (each a
-small `\newif`/`\ifx` block in the "select which family renders" section, plus the
-`print-chords` switch at the file end); `phone` extends the same lever.
+reference's six cross-set toggles — realised for `chords`, `lyrics` and `phone`
+(each a small `\newif`/`\ifx` line in the view-detection block near the top of the
+`.sty`, with the family swallow in "select which family renders", the
+`print-chords` switch at the file end, and — for `phone` — the geometry, the
+`\clearoddpage` guard, and the link-size knob).
 
 The **Reference's `Structure` option is abandoned** — not being carried forward.
 

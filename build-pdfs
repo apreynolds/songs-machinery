@@ -18,8 +18,10 @@
 # chords view prints the chart twins and suppresses the lyric verse types; the
 # lyrics view prints the lyric verse bodies with the chords stripped
 # (print-chords=false); the debug view prints BOTH families in one sheet (lyric
-# bodies and their chart twins) for proofing line lengths/spacing. `chords',
-# `lyrics' and `debug' are wired up (see compile_view()); `phone' is planned.
+# bodies and their chart twins) for proofing line lengths/spacing; the phone view
+# prints the same full lyric+chord body on tall long-paper geometry at a larger
+# base font, for reading one song as a continuous scroll on a phone. `chords',
+# `lyrics', `debug' and `phone' are all wired up (see compile_view()).
 # The magic comment must sit in the leading comment block,
 # before \documentclass (TeX magic-comment convention).
 #
@@ -140,10 +142,12 @@ read_outdir() {
   printf '%s\n%s\n' "$mode" "$path"
 }
 
-# Build a presentation view (chords, lyrics or debug) of a song: inject
+# Build a presentation view (chords, lyrics, debug or phone) of a song: inject
 # \def\View{NAME} so MyLeadsheets.sty selects that view's bodies (chords
 # prints the chart twins and suppresses the lyric types; lyrics prints the lyric
-# bodies with chords stripped; debug prints both families). Output is SONG--NAME.pdf.
+# bodies with chords stripped; debug prints both families; phone prints the full
+# lyric+chord body on tall long-paper geometry at a larger font). Output is
+# SONG--NAME.pdf.
 # Forced with -g (the
 # source is unchanged, so latexmk's up-to-date check would otherwise skip the
 # rebuild). The -pdflatex override mirrors the global latexmkrc invocation, with
@@ -206,7 +210,7 @@ build_song() {
 
     for view in $(read_views "$base"); do
       case $view in
-        chords | lyrics | debug)
+        chords | lyrics | debug | phone)
           varaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname--$view"
           mkdir -p "$varaux" || exit
           compile_view "$jobname" "$base" "$varaux" "$view" "$movedir" || exit
