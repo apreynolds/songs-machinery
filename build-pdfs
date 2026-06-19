@@ -211,7 +211,7 @@ build_song() {
           mkdir -p "$varaux" || exit
           compile_view "$jobname" "$base" "$varaux" "$view" "$movedir" || exit
           echo "    + $jobname--$view.pdf ($view)"
-          [[ $outmode == BOTH ]] && { cp -- "$jobname--$view.pdf" "$outdir/" || exit; }
+          if [[ $outmode == BOTH ]]; then cp -- "$jobname--$view.pdf" "$outdir/" || exit; fi
           ;;
         *)
           echo "build-pdfs: view '$view' not yet supported, skipping" >&2
