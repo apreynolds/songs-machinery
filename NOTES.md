@@ -551,6 +551,22 @@ The only sibling-producing magic comment:
   full vs phone on a standalone song (1 tall page vs 2 letter pages) and a
   two-song `\bookinclude` book (phone 3 pp / no blanks vs full 6 pp / padded).
 
+- **grayscale view** — `compile_view()` injects `\def\View{grayscale}`, producing
+  `Song--grayscale.pdf`. Content is **identical to `full`** (same family path:
+  grayscale is neither chords/lyrics/debug/phone, so the lyric bodies render with
+  the chart twins swallowed). The colour is killed in two keyed-on-`\ifMyLSgrayscale`
+  spots near the top of the `.sty`: (a) `xcolor` is loaded with the **`monochrome`**
+  package option (it sets `\colors@false`, so all `\color`/`\textcolor`/coloured
+  TikZ glyphs fall back to black — verified: chords, noteboxes, `\bg`, and the
+  difficulty/genre/arrangement markers all print black); (b) `\myleadsheetsboxbegin`
+  takes its `colback` through `\MyLSboxcolback`, which expands to `white` under
+  grayscale instead of the part-type tint, so the section boxes are plain white
+  (boxrule stays 0mm — no border added). The white override is independent of
+  `monochrome` (belt-and-suspenders): a 6%-gray tint would survive monochrome as a
+  faint gray, which the explicit `white` avoids. Verified by rendering
+  `ManOnMoon--grayscale.pdf` to PNG — black text, white boxes, no black fill.
+  Deliberately knob-free (rare, print-only).
+
 The presentation axis still folds together with capo/transpose via the wrapper
 model: put
 `%! views: chords` in a capo/transpose wrapper and that wrapper gets its own

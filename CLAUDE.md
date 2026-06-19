@@ -187,7 +187,13 @@ Mechanism internals and rationale are in `NOTES.md`.
   on the tall layout, and the blanks would be very long), and the back-to-contents
   link is enlarged (`\large` vs the other views' `\footnotesize`). The only knobs
   are `\MyLSphoneheight` (default `22in`) and `\MyLStoclinksize` (set to `\large`
-  under phone).
+  under phone). The **`grayscale` view** (`Song--grayscale.pdf`) prints the
+  **same content as `full`** on the usual letterpaper layout but with **all colour
+  switched off** for plain printing: it loads `xcolor` with the `monochrome`
+  option, so every coloured glyph (chord symbols, noteboxes, `\bg` text,
+  difficulty/genre/arrangement markers) falls back to black ink, and the coloured
+  section boxes are forced to a **white** background (no tint, no border added).
+  Deliberately minimal — there are no knobs.
   - *Shared instrumental sections.* A lyric-free, chart-shaped section (an
     intro/outro/solo that is just a `\measures` line) has **identical** content in
     both the lyric type and its twin. There is no `[both]` option; instead, to

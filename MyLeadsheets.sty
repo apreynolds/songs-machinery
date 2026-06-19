@@ -37,17 +37,20 @@
 % Output view selection  (\View)
 % ---------------------------------------------------------------------------
 % A single command-line lever -- `\def\View{...}', injected by build-pdfs before
-% \input -- picks one view.  One of: full (default), chords, lyrics, debug, phone.
+% \input -- picks one view.  One of: full (default), chords, lyrics, debug,
+% phone, grayscale.
 % Detected ONCE here, near the top, so the geometry block just below (the `phone'
-% view needs a taller page), the songbook helpers (phone skips odd-page padding),
-% the back-to-contents link (larger in phone) and the family-selection block much
-% further down can all branch on the same \newif flags.  This block only
-% establishes \View and its booleans.
+% view needs a taller page), the xcolor load (the `grayscale' view adds the
+% `monochrome' package option), the songbook helpers (phone skips odd-page
+% padding), the back-to-contents link (larger in phone) and the family-selection
+% block much further down can all branch on the same \newif flags.  This block
+% only establishes \View and its booleans.
 \providecommand\View{full}
-\newif\ifMyLSchords \def\MyLSchordsflag{chords} \ifx\View\MyLSchordsflag \MyLSchordstrue \fi
-\newif\ifMyLSlyrics \def\MyLSlyricsflag{lyrics} \ifx\View\MyLSlyricsflag \MyLSlyricstrue \fi
-\newif\ifMyLSdebug  \def\MyLSdebugflag{debug}   \ifx\View\MyLSdebugflag  \MyLSdebugtrue  \fi
-\newif\ifMyLSphone  \def\MyLSphoneflag{phone}   \ifx\View\MyLSphoneflag  \MyLSphonetrue  \fi
+\newif\ifMyLSchords    \def\MyLSchordsflag{chords}       \ifx\View\MyLSchordsflag    \MyLSchordstrue    \fi
+\newif\ifMyLSlyrics    \def\MyLSlyricsflag{lyrics}       \ifx\View\MyLSlyricsflag    \MyLSlyricstrue    \fi
+\newif\ifMyLSdebug     \def\MyLSdebugflag{debug}         \ifx\View\MyLSdebugflag     \MyLSdebugtrue     \fi
+\newif\ifMyLSphone     \def\MyLSphoneflag{phone}         \ifx\View\MyLSphoneflag     \MyLSphonetrue     \fi
+\newif\ifMyLSgrayscale \def\MyLSgrayscaleflag{grayscale} \ifx\View\MyLSgrayscaleflag \MyLSgrayscaletrue \fi
 
 % ---------------------------------------------------------------------------
 % Page geometry  (geometry kept on purpose -- see CLAUDE.md design goals)
@@ -93,7 +96,16 @@
 % Everything here uses the package's *documented* template commands
 % (\verselabel, \ifobeylines, \setleadsheets), patterned on the manual's own
 % "itemize" template, so no LaTeX3 (expl3) syntax is needed at all.
-\RequirePackage[dvipsnames]{xcolor}
+% The `grayscale' view (print-friendly) adds xcolor's `monochrome' option, which
+% switches colour output off entirely: every \color / \textcolor / coloured glyph
+% falls back to black ink.  The coloured section boxes are forced to a white
+% background separately (see \myleadsheetsboxbegin), so monochrome only needs to
+% handle the inline colour (chords, noteboxes, \bg, difficulty/genre glyphs).
+\ifMyLSgrayscale
+  \RequirePackage[dvipsnames,monochrome]{xcolor}
+\else
+  \RequirePackage[dvipsnames]{xcolor}
+\fi
 \RequirePackage{tcolorbox}
 
 % --- shared box body -------------------------------------------------------
@@ -102,9 +114,14 @@
 % \verselabel keeps its normal placement; we only add the tcolorbox around it.
 % \makeatletter is needed solely for \@itemdepth, a standard LaTeX list
 % internal -- exactly as the manual's own itemize example uses it.
+% \MyLSboxcolback expands to the part-type colour normally, or to `white' in the
+% `grayscale' view -- so the section boxes lose their tint (no border is added;
+% boxrule stays 0mm) and print on plain white, while the rest of the page goes
+% black-on-white via xcolor's monochrome option (see the xcolor load above).
+\newcommand\MyLSboxcolback[1]{\ifMyLSgrayscale white\else #1\fi}
 \makeatletter
 \newcommand\myleadsheetsboxbegin[1]{%
-  \tcolorbox[left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=#1]%
+  \tcolorbox[left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=\MyLSboxcolback{#1}]%
   \itemize
   \@itemdepth=0
   \ifobeylines
