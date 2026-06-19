@@ -374,15 +374,12 @@
 \newcommand\transdown{\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Downarrow$}}}
 \newcommand\transup  {\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Uparrow$}}}
 
-% `difficulty', `tuning', `arrangement' and `remarks' are not leadsheets built-ins
+% `difficulty', `tuning' and `arrangement' are not leadsheets built-ins
 % (unlike title/band/tempo/key/capo), so each must be registered with
 % \definesongproperty before \songproperty{...} / \ifsongproperty{...} work.
-% (`remarks' is a short per-song note that feeds the NOTES block — see the
-% "Remarks" section near the file end.)
 \definesongproperty{difficulty}
 \definesongproperty{tuning}
 \definesongproperty{arrangement}
-\definesongproperty{remarks}
 % TEMPORARY (2026-06-17): registered only so legacy songs with `istransposed='
 % stop erroring on an unknown key; the value is stored but not rendered.  Revisit
 % with the transpose-label redesign (see \transup / \transdown above).
@@ -883,20 +880,7 @@
 % pulled up toward the heading (applied as negative space above the line).
 \newcommand\MyLStuningfont{\small}
 \newcommand\MyLStuningraise{0.5\baselineskip}
-% \MyLScapturesongid — copy the current song id into a global so the `remarks'
-% environment (which runs OUTSIDE the song env, where \l_leadsheets_current_song_id_tl
-% has reverted to empty) can still read THIS song's properties.  Called at the top
-% of the title template below, which runs INSIDE the song (during both the
-% measuring and the real pass — harmless, the global is just reassigned the same
-% value).  \l_leadsheets_current_song_id_tl is leadsheets' PUBLIC (single-`_')
-% current-song id, so reading it uses no private internals.  See "Remarks" below.
-\ExplSyntaxOn
-\tl_new:N \g__myls_song_id_tl
-\cs_new_protected:Npn \MyLScapturesongid
-  { \tl_gset_eq:NN \g__myls_song_id_tl \l_leadsheets_current_song_id_tl }
-\ExplSyntaxOff
 \definesongtitletemplate{mytitle}{%
-  \MyLScapturesongid
   \section{\texorpdfstring{%
     \ifsongproperty{arrangement}{\MyLSarrangementslot{\songproperty{arrangement}}}{}%
     \large\sffamily\songproperty{title}\space\mdseries
@@ -980,21 +964,22 @@
 \fi
 
 % ---------------------------------------------------------------------------
-% Remarks  ("NOTES — <title>" block at the bottom of the last page)
+% Remarks  ("Remarks" block at the bottom of the last page)
 % ---------------------------------------------------------------------------
 % A `remarks' environment, written AFTER \end{song} (outside the song env),
-% appends a notes block to the bottom of the song's last page:
+% appends a remarks block to the bottom of the song's last page:
 %
 %   \end{song}
 %   \begin{remarks}
 %     Any free-text prose about the song.
 %   \end{remarks}
 %
-% It prints, in order: a header "NOTES — <title>"; the song's `tempo' property
-% (if set); the song's `remarks' property (if set); then the environment's own
-% free-text body.  Everything but the header is optional, so a bare
-% \begin{remarks}\end{remarks} after a song with no tempo / no remarks property
-% just prints the "NOTES — <title>" header.
+% It prints a header "Remarks", then the environment's own free-text body.  A
+% bare \begin{remarks}\end{remarks} just prints the "Remarks" header.  The block
+% reads NOTHING from the song — it is pure free text — so it has no coupling to
+% the preceding song and no song-id plumbing (earlier revisions surfaced the
+% song's title/tempo/`remarks' property here, which needed a captured song id;
+% all three are gone).
 %
 % WHY OUTSIDE THE SONG ENV.  Inside \begin{song}…\end{song} leadsheets makes
 % ^ _ | : active (chord / barline shorthands) and applies the bold "song" body
@@ -1004,50 +989,24 @@
 % (leadsheets.library.external.code.tex), so everything between \begin{document}
 % and \end{document} — including a post-\end{song} remarks block — is pulled in.
 %
-% READING THE SONG'S PROPERTIES FROM OUTSIDE.  \songproperty reads
-% \l_leadsheets_current_song_id_tl, which leadsheets sets only inside the song's
-% group, so it has reverted by here.  The title template (run inside the song)
-% stashes the id via \MyLScapturesongid into \g__myls_song_id_tl; this environment
-% restores it LOCALLY (so it reverts at \end{remarks}) and \songproperty /
-% \ifsongproperty then resolve against this song.
-%
 % \vfill at the top drops the block to the page bottom; it simply flows onto a
 % new page if it does not fit (acceptable per spec).  Restyle via the \MyLSremarks*
 % knobs.  Per-build on/off toggling is intentionally NOT built (not needed yet);
 % if ever wanted, the seam is the same xparse `+b' body-swallow the chords/lyrics
 % verse types use — redefine `remarks' to gobble its body under a \View flag.
-\newcommand\MyLSremarkslabel{NOTES}
-\newcommand\MyLSremarksdash{\space\textemdash\space}
-\newcommand\MyLSremarkstempolabel{Tempo:\space}
+% No expl3 is needed any more: the block reads no properties, so the environment
+% is plain LaTeX.
+\newcommand\MyLSremarkslabel{Remarks}
 \newcommand\MyLSremarksheadfont{\large\sffamily\bfseries}
-\newcommand\MyLSremarksmetafont{\normalsize\sffamily}
 \newcommand\MyLSremarksrule{\par\hrule\vskip4pt\par}
-% Helper + environment defined together inside one expl3 block so the colon in
-% \__myls_remarks_head: is a valid name char; the stored environment code runs
-% later under normal document catcodes (the body the author types is unaffected).
-% The literal "NOTES"/"Tempo:" strings live in the \newcommand knobs above (normal
-% catcodes), not inside expl3, so no `:'-is-a-letter / `~'-is-a-space surprises.
-\ExplSyntaxOn
-\cs_new_protected:Npn \__myls_remarks_head:
-  {
-    \tl_set_eq:NN \l_leadsheets_current_song_id_tl \g__myls_song_id_tl
-    \MyLSremarksrule
-    { \MyLSremarksheadfont \MyLSremarkslabel \MyLSremarksdash \songproperty{title} \par }
-    \ifsongproperty{tempo}
-      { { \MyLSremarksmetafont \MyLSremarkstempolabel \songproperty{tempo} \par } }
-      { }
-    \ifsongproperty{remarks}
-      { { \MyLSremarksmetafont \songproperty{remarks} \par } }
-      { }
-  }
 \NewDocumentEnvironment{remarks}{}
   {
     \par \vfill
     \setlength \parindent {0pt}
-    \__myls_remarks_head:
+    \MyLSremarksrule
+    { \MyLSremarksheadfont \MyLSremarkslabel \par }
   }
   { \par }
-\ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
 % Even-page / odd-start padding for two-page (spread) digital viewing

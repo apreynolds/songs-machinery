@@ -82,21 +82,21 @@ Quick orientation for reading a `.song` (details and rationale are in
     reposition with `\MyLStuningfont` / `\MyLStuningraise`. Mechanism internals (the
     min-width box, the TOC/bookmark safety, the post-`\section` tuning line) are in
     `NOTES.md`.
-  - `remarks` — a short per-song note (e.g. `remarks={Capo 2 alt take}`). Prints
-    **nowhere in the header**; it feeds the optional NOTES block (below). Likewise
-    `tempo` (a leadsheets built-in) is *not* in the header — its only consumer is
-    the NOTES block.
-- **Remarks / NOTES block** — a `remarks` environment, written **after**
-  `\end{song}` (outside the song env, so prose has normal catcodes and no song-body
-  bolding), appends a notes block to the **bottom** of the song's last page:
-  a header `NOTES — <title>`, then the song's `tempo` and `remarks` properties if
-  set, then the environment's own free-text body (all optional but the header).
-  A bare `\begin{remarks}\end{remarks}` prints just the header. It auto-positions
-  with `\vfill` (flows to a new page if it doesn't fit) and travels into a songbook
-  like any post-`\end{song}` body. Restyle via the `\MyLSremarks*` knobs
-  (`…label`, `…dash`, `…tempolabel`, `…headfont`, `…metafont`, `…rule`). Per-build
-  on/off toggling is deliberately not built yet. Mechanism (the song-id capture
-  that lets it read properties from outside the song env) is in `NOTES.md`.
+  - `tempo` (a leadsheets built-in) is accepted but rendered **nowhere** — not in
+    the header (dropped in the redesign) and, since the Remarks-block decoupling,
+    not there either. Setting `tempo=` is harmless but has no visible effect.
+    (There is no longer a `remarks` *property*; "remarks" now means only the
+    environment below.)
+- **Remarks block** — a `remarks` environment, written **after** `\end{song}`
+  (outside the song env, so prose has normal catcodes and no song-body bolding),
+  appends a block to the **bottom** of the song's last page: a header `Remarks`,
+  then the environment's own free-text body. A bare `\begin{remarks}\end{remarks}`
+  prints just the header. The block reads **nothing** from the song (pure free
+  text — no title, tempo, or property pulled in), so it has no song-id plumbing and
+  no coupling to the preceding song. It auto-positions with `\vfill` (flows to a new
+  page if it doesn't fit) and travels into a songbook like any post-`\end{song}`
+  body. Restyle via the `\MyLSremarks*` knobs (`…label`, `…headfont`, `…rule`).
+  Per-build on/off toggling is deliberately not built yet. Mechanism in `NOTES.md`.
 - **Coloured section boxes** are the *default* for every part type, so a bare
   `\begin{verse}` … `\begin{chorus}` … is already boxed in its own colour — no
   `[template=]` needed. The named templates (`versebox`, `chorusbox`, `solobox`,
