@@ -641,7 +641,7 @@
 % The chords view prints a chord CHART in place of the lyric body, section by
 % section, so the two sheets stay structurally identical.  It is selected by
 % compile-songs injecting `\def\View{chords}' before \input; the
-% \providecommand below makes the ordinary build's \View resolve to "default".
+% \providecommand below makes the ordinary build's \View resolve to "full".
 % (The chords/lyrics axis is now the only magic-comment-driven view; capo and
 % transpose are separate wrapper .song files, not injected build flags.)
 %
@@ -704,14 +704,14 @@
 \renewcommand\thechoruschords{C\arabic{choruschords}}
 
 % --- select which family renders ----------------------------------------------
-% \View is one of: default, chords, lyrics, debug (phone planned).  `chords'
-% renders the chart twins and swallows the lyric bodies; `lyrics' and `default'
+% \View is one of: full, chords, lyrics, debug (phone planned).  `chords'
+% renders the chart twins and swallows the lyric bodies; `lyrics' and `full'
 % print the lyric bodies and swallow the twins -- they differ only in print-chords
 % (set near the file end): `lyrics' additionally suppresses the ^{C} chords,
 % leaving words alone.  `debug' swallows NOTHING, printing both families in one
 % sheet (chords on, like default) for proofing line lengths / spacing -- see the
 % three-way selection below.
-\providecommand\View{default}
+\providecommand\View{full}
 \def\MyLSchordsflag{chords}
 \newif\ifMyLSchords
 \ifx\View\MyLSchordsflag \MyLSchordstrue \else \MyLSchordsfalse \fi
@@ -991,22 +991,55 @@
 %
 % \vfill at the top drops the block to the page bottom; it simply flows onto a
 % new page if it does not fit (acceptable per spec).  Restyle via the \MyLSremarks*
-% knobs.  Per-build on/off toggling is intentionally NOT built (not needed yet);
-% if ever wanted, the seam is the same xparse `+b' body-swallow the chords/lyrics
-% verse types use — redefine `remarks' to gobble its body under a \View flag.
-% No expl3 is needed any more: the block reads no properties, so the environment
-% is plain LaTeX.
+% knobs.
+%
+% VIEW FILTERING.  An optional comma-list of view names restricts the block to
+% those views: \begin{remarks}[chords] prints only in the chords view,
+% \begin{remarks}[chords,full] in those two.  A bare \begin{remarks} (empty list)
+% prints in EVERY view.  The `debug' view is exempt -- it always shows every
+% remarks block, since it exists to proof everything on one sheet.  This is the
+% xparse `+b' body-swallow the chords/lyrics verse types use: the body is captured
+% as an argument and either typeset or silently discarded.  expl3 is used only for
+% the (exact-item) comma-list membership test; the author's prose body keeps its
+% document catcodes (it is read where \begin{remarks} appears, not where the
+% environment is defined).
 \newcommand\MyLSremarkslabel{Remarks}
 \newcommand\MyLSremarksheadfont{\large\sffamily\bfseries}
 \newcommand\MyLSremarksrule{\par\hrule\vskip4pt\par}
-\NewDocumentEnvironment{remarks}{}
+\ExplSyntaxOn
+\prg_generate_conditional_variant:Nnn \clist_if_in:Nn { Ne } { TF }
+\clist_new:N \l__myls_remarks_views_clist
+% \__myls_remarks_show:nTF {<view-list>} -- print in the current \View?
+\prg_new_protected_conditional:Npnn \__myls_remarks_show:n #1 { TF }
   {
-    \par \vfill
-    \setlength \parindent {0pt}
-    \MyLSremarksrule
-    { \MyLSremarksheadfont \MyLSremarkslabel \par }
+    \tl_if_empty:nTF {#1}
+      { \prg_return_true: }
+      {
+        \str_if_eq:eeTF { \View } { debug }
+          { \prg_return_true: }
+          {
+            \clist_set:Nn \l__myls_remarks_views_clist {#1}
+            \clist_if_in:NeTF \l__myls_remarks_views_clist { \View }
+              { \prg_return_true: }
+              { \prg_return_false: }
+          }
+      }
   }
-  { \par }
+\NewDocumentEnvironment{remarks}{ O{} +b }
+  {
+    \__myls_remarks_show:nTF {#1}
+      {
+        \par \vfill
+        \setlength \parindent {0pt}
+        \MyLSremarksrule
+        { \MyLSremarksheadfont \MyLSremarkslabel \par }
+        #2
+        \par
+      }
+      { }
+  }
+  { }
+\ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
 % Even-page / odd-start padding for two-page (spread) digital viewing
