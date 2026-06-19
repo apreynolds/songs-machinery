@@ -37,6 +37,24 @@
 # Body files (SONG--input.song) are includes, not standalone documents, so this
 # script SKIPS any *--input.song (it has no preamble and would fail to compile).
 #
+# Output directory via an OUTDIR file: if the song's own directory contains a
+# file named OUTDIR (or .OUTDIR), a directory path on its own line (a leading ~
+# is expanded) redirects PDFs for songs in that directory there instead of
+# alongside the source. By default the build goes straight to that directory
+# (no local copy); add a line reading BOTH (or COPY) to instead build locally
+# AND copy the PDFs to the destination, keeping both. Blank and #-comment lines
+# are ignored and the path / keyword may appear in either order, e.g.
+#
+#     BOTH
+#     ~/Dropbox/songsheets
+#
+# OUTDIR is consulted per song directory, so a multi-file/multi-directory
+# invocation can ship each song's PDFs to a different place. The file is meant
+# to be git-ignored, so the destination stays a local choice. If neither file
+# exists -- or the named path is missing or not a directory -- the build falls
+# back to the usual local output (a bad path warns). OUTDIR takes precedence
+# over .OUTDIR if both exist.
+#
 # Relies on the global latexmkrc for the pdflatex invocation
 # (--shell-escape, nonstopmode) and on TEXINPUTS (set in .zprofile) for the
 # PR#46-shadowed leadsheets file.
@@ -80,6 +98,48 @@ read_views() {
   done <"$file"
 }
 
+# Resolve an alternate output directory from an OUTDIR / .OUTDIR file in the
+# current directory (the song's own directory, since build_song cd's there).
+# The file holds a directory path (a leading ~ is expanded) plus an optional
+# mode keyword on its own line: BOTH (synonym COPY) means build locally AND copy
+# the PDFs to the destination; with no keyword the build goes straight to the
+# destination (no local copy). Blank lines and #-comment lines are ignored, and
+# the path / keyword may appear in either order. On success echoes two lines --
+# the mode (MOVE or BOTH) then the validated path; echoes nothing when the
+# caller should build locally: neither file present, no usable path, or a path
+# that is missing / not a directory (the last two warn). OUTDIR wins over
+# .OUTDIR if both exist.
+read_outdir() {
+  local f line trimmed lower path="" mode="MOVE"
+  for f in OUTDIR .OUTDIR; do
+    [[ -f $f ]] && break
+  done
+  [[ -f $f ]] || return 0          # neither file exists -> build locally
+
+  while IFS= read -r line || [[ -n $line ]]; do
+    # Trim surrounding whitespace (covers a trailing CR too).
+    trimmed=${line#"${line%%[![:space:]]*}"}
+    trimmed=${trimmed%"${trimmed##*[![:space:]]}"}
+    [[ -z $trimmed || ${trimmed:0:1} == "#" ]] && continue   # blank / comment
+    lower=${trimmed,,}
+    case $lower in
+      both | copy) mode="BOTH"; continue ;;   # keep a local copy too
+    esac
+    [[ -z $path ]] && path=$trimmed           # first non-keyword line = path
+  done <"$f"
+
+  if [[ -z $path ]]; then
+    echo "build-pdfs: $f has no directory path, building locally" >&2
+    return 0
+  fi
+  path=${path/#\~/$HOME}            # expand a leading ~
+  if [[ ! -d $path ]]; then
+    echo "build-pdfs: $f path '$path' is not a directory, building locally" >&2
+    return 0
+  fi
+  printf '%s\n%s\n' "$mode" "$path"
+}
+
 # Build a presentation view (chords, lyrics or debug) of a song: inject
 # \def\View{NAME} so MyLeadsheets.sty selects that view's bodies (chords
 # prints the chart twins and suppresses the lyric types; lyrics prints the lyric
@@ -90,8 +150,8 @@ read_views() {
 # the view name interpolated into the injected \def (hence double quotes and
 # escaped backslashes, unlike the fixed-\def helpers above).
 compile_view() {
-  local jobname=$1 src=$2 auxdir=$3 view=$4
-  latexmk -pdf -g -auxdir="$auxdir" -jobname="$jobname--$view" \
+  local jobname=$1 src=$2 auxdir=$3 view=$4 outdir=$5
+  latexmk -pdf -g -auxdir="$auxdir" ${outdir:+"-outdir=$outdir"} -jobname="$jobname--$view" \
     -pdflatex="pdflatex --shell-escape %O -synctex=0 -interaction=nonstopmode \"\\def\\View{$view} \\input{%S}\"" \
     "$src"
 }
@@ -100,7 +160,7 @@ compile_view() {
 # Runs in a subshell so the cd (and the aux-dir scheme that depends on cwd)
 # stays local to this build. Returns non-zero if the default compile fails.
 build_song() {
-  local song=$1 dir base jobname auxdir view varaux
+  local song=$1 dir base jobname auxdir view varaux outinfo outdir outmode movedir
   dir=$(dirname -- "$song")
   base=$(basename -- "$song")
   jobname=${base%.song}
@@ -117,19 +177,41 @@ build_song() {
     auxdir="$HOME/.cache/latexmk/${PWD##*/}-$jobname"
     mkdir -p "$auxdir" || exit
 
+    # Output directory: an OUTDIR/.OUTDIR file here can redirect PDFs elsewhere
+    # (see header). read_outdir echoes two lines (mode, path) or nothing.
+    # MOVE (default): latexmk's -outdir writes the PDF straight to the
+    # destination. BOTH: build locally as usual (out-dir defaults to cwd), then
+    # copy each PDF to the destination. movedir carries the -outdir path for the
+    # MOVE case only, so the BOTH case keeps its local build.
+    outdir=""; outmode=""; movedir=""
+    if outinfo=$(read_outdir) && [[ -n $outinfo ]]; then
+      outmode=${outinfo%%$'\n'*}
+      outdir=${outinfo#*$'\n'}
+      if [[ $outmode == BOTH ]]; then
+        echo "    -> outdir: $outdir (local copy kept)"
+      else
+        movedir="$outdir"
+        echo "    -> outdir: $outdir"
+      fi
+    fi
+
     # The default PDF. Capo / transposed / original-key sheets are no longer
     # built here: each is its own wrapper .song (see header) and arrives as a
     # separate $song in the loop below.
-    latexmk -pdf -auxdir="$auxdir" "$base" || exit
+    latexmk -pdf -auxdir="$auxdir" ${movedir:+"-outdir=$movedir"} "$base" || exit
     echo "    ok: $jobname.pdf"
+    if [[ $outmode == BOTH ]]; then
+      cp -- "$jobname.pdf" "$outdir/" || exit
+    fi
 
     for view in $(read_views "$base"); do
       case $view in
         chords | lyrics | debug)
           varaux="$HOME/.cache/latexmk/${PWD##*/}-$jobname--$view"
           mkdir -p "$varaux" || exit
-          compile_view "$jobname" "$base" "$varaux" "$view" || exit
+          compile_view "$jobname" "$base" "$varaux" "$view" "$movedir" || exit
           echo "    + $jobname--$view.pdf ($view)"
+          [[ $outmode == BOTH ]] && { cp -- "$jobname--$view.pdf" "$outdir/" || exit; }
           ;;
         *)
           echo "build-pdfs: view '$view' not yet supported, skipping" >&2
