@@ -593,11 +593,24 @@
 % resets size and colour itself, so only the lyric text greys.  Retune the look via
 % \MyLSbgfont / \MyLSbgcolor.
 %
+% POSITION RELATIVE TO A CHORD IS MEANINGFUL (not a gotcha).  A `^{chord}' binds
+% whatever IMMEDIATELY follows it as the word set under the chord (leadsheets scans
+% up to the next space, in its own grouped tabular).  So three distinct forms:
+%   \bg ^{A}word    chord OVER the de-emphasised word  -- \bg goes BEFORE the chord
+%   ^{A} \bg word   chord FLOATS FREE, lyric starts after the hit  -- the space
+%                   after the chord gives it an empty slot, detaching it on purpose
+%   ^{A}\bg word    AMBIGUOUS, AVOID -- \bg is captured as the chord's word and set
+%                   inside that group, so the grey reverts after just that one word
+% \bgoff follows the same rule: end a run on a plain word (Word\bgoff) or before a
+% chord; never ^{A}\bgoff.  (So the reliable habit is positional -- put \bg/\bgoff
+% before a chord, not after -- NOT "a space on each side", which forces the
+% detaching space when the switch follows a chord.)
+%
 %   \measures{%
-%     {^{E5} \bg (follow me, don't}
-%     {^{E5} follow me) \bgoff}
-%     {^{G} GOT my SPINE I've}
-%     {^{D} GOT my ORANGE CRUSH}
+%     {\bg ^{E5}(follow me, don't}      % E5 over "(follow"
+%     {^{E5}follow me) \bgoff}          % E5 over "follow"; run ends on the word
+%     {^{G}GOT my SPINE I've}
+%     {^{D}GOT my ORANGE CRUSH}
 %   }
 \newcommand\MyLSbgcolor{gray}
 \newcommand\MyLSbgfont{\small\color{\MyLSbgcolor}}

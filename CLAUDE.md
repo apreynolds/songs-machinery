@@ -278,6 +278,20 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
   (sometimes per-section) judgement the converter can't make — see the convert
   skill's flag for it.
 
+- **Backing-vocal de-emphasis `\bg … \bgoff`.** A *switch* (not a `\bg{…}` wrapper)
+  that greys + shrinks lyric text for subordinated backing vocals across `\measures`
+  cells; auto-clears at each line end. **Position relative to a chord is meaningful,
+  not a gotcha** — a `^{chord}` binds whatever *immediately* follows it as the word
+  under the chord, so the three forms are three intents: `\bg ^{A}word` = chord
+  **over** the grey word (`\bg` before the chord); `^{A} \bg word` = chord **floats
+  free**, lyric starts after the hit (the space gives the chord an empty slot);
+  `^{A}\bg word` = **ambiguous, avoid** — `\bg` is captured as the chord's word and
+  greys only that one word. `\bgoff` likewise: end on a plain word (`word\bgoff`) or
+  before a chord, never `^{A}\bgoff`. The reliable habit is **positional** (put the
+  switch before a chord), *not* "a space on each side" — that space is exactly what
+  detaches a chord when the switch follows it. Mechanism + the leadsheets
+  chord-capture detail are in `NOTES.md`; full contract in the `.sty` `\bg` block.
+
 # Files
 
 ## Key files 

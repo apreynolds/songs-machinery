@@ -338,6 +338,38 @@ though `--` stays consistent with convention.
 (`\MyLSremarksheadfont`), not `\section*`, so it never reaches the TOC, a PDF
 bookmark, or a running head. Knobs: `\MyLSremarkslabel` / `…headfont` / `…rule`.
 
+### Backing-vocal de-emphasis (`\bg` / `\bgoff`)
+
+A switch that greys + shrinks lyric text across `\measures` cells (`MyLeadsheets.sty`,
+"Backing-vocals de-emphasis"). `\bg` sets a **global** bool (`\l__myls_bg_bool`) *and*
+applies `\MyLSbgfont`; `\__myls_measurebox` re-applies the font at the start of every
+cell while the bool is set (each cell is its own box/group, so a plain font switch
+would not carry across cells), and the bool is force-cleared at each `\measures`
+line's end. `\bgoff` clears the bool and applies `\MyLSbgreset`.
+
+**The chord-position rule (why three forms exist).** `^{chord}word` is
+`\getorprintchord` → `\chord` → `\__leadsheets_set_chord:nwn #1#2~#3`
+(`leadsheets.library.chords.code.tex:65`): the chord grabs the next **space-delimited
+word** (`#2`) and typesets it under the chord inside `\leadsheets_place_above`'s
+`\group_begin:…\group_end:` + `tabular` (`chords.code.tex:159`). So a `\bg` placed
+*immediately after* a chord is captured into `#2` and runs **inside that group** — its
+colour/size revert at `\group_end:`, grey-ing only that one word (the global bool still
+flips, which is why later whole cells still grey). Hence:
+
+- `\bg ^{A}word` — `\bg` runs in cell scope first; the word under the chord inherits
+  grey (no reset in `place_above`, only `\linespread{1}\selectfont`). **Chord over the
+  grey word.**
+- `^{A} \bg word` — the space after `^{A}` makes `#2` *blank*, so the chord gets the
+  1 em empty-chord slot (`\l__leadsheets_empty_chord_dim`) and detaches; `\bg` then runs
+  in cell scope. **Chord floats free, grey lyric after.** (A space after *any* chord
+  detaches it this way — independent of `\bg`.)
+- `^{A}\bg word` — the captured-in-group case above. **Ambiguous; avoid.**
+
+No clean `.sty`-only fix exists: the capture is leadsheets' space-delimited scan over
+*input* tokens, before `\bg` expands, so redefining `\bg` can't escape it; only patching
+leadsheets' chord internals would — against the "avoid leadsheets internals" goal.
+Verified visually on `rem-songs/CantGetThere.song`'s chorus (the file that surfaced it).
+
 ### Deferred — the key label following transposition
 
 The title template prints `\songproperty{key}` raw, so a `transpose=` wrapper's
