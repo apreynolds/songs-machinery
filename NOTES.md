@@ -378,6 +378,32 @@ No clean `.sty`-only fix exists: the capture is leadsheets' space-delimited scan
 leadsheets' chord internals would — against the "avoid leadsheets internals" goal.
 Verified visually on `rem-songs/CantGetThere.song`'s chorus (the file that surfaced it).
 
+### Barline appearance — width and length
+
+Every bar in a chart (`\normalbar`, `\thickbar`, and the composed `\leftrepeat` /
+`\rightrepeat` / `\stopbar`) is a `\rule` drawn by leadsheets'
+`\genericbar{<width>}` (`musicsymbols.code.tex`), which hardwires the rule's
+*length* to the current font size: `\leadsheets@barheight = \leadsheets@size`
+(`\f@size pt`), rule from `-0.2x` (depth) to `+0.8x` (above baseline). Two
+appearance levers, both set at the top of `MyLeadsheets.sty` next to each other:
+
+- **Width (thickness)** — public knob. `\def\normalbarwidth{.09em}` overrides
+  leadsheets' thin `.02em` default. Read at bar-use time, so a plain `\def` wins.
+- **Length (height)** — no public API, so we `\renewrobustcmd*\genericbar` to
+  multiply the rule length by `\MyLSbarheightscale` (default **1.25** — a slight
+  increase from the stock 1.0; chosen by eye against `BangAndBlame` at 1.0/1.25/1.5).
+  The `-0.2` depth fraction scales with it, so the bar grows symmetrically and stays
+  centred on the line. Tune globally in the `.sty` or per-song with
+  `\renewcommand\MyLSbarheightscale{…}`.
+
+Notes: redefining the single `\genericbar` chokepoint scales **all** bar types
+together (they all compose it) and leaves `\measures`' width-alignment untouched
+(that measures bar *width*, not height). It reaches into a leadsheets `@`-internal
+(`\genericbar` / `\leadsheets@size` / `\leadsheets@barheight`) — justified only by
+the absence of a documented bar-length API. The repeat `:` colon
+(`\leadsheets@repeatcolon`) is a separate text glyph and does **not** scale, so on
+`|:` / `:|` bars the rules grow but the dots don't (negligible at ~1.25).
+
 ### Deferred — the key label following transposition
 
 The title template prints `\songproperty{key}` raw, so a `transpose=` wrapper's
