@@ -1,0 +1,25 @@
+# SAMPLE-OUTDIR — template for build-pdfs output redirection
+#
+# To use: rename (or copy) this file to OUTDIR or .OUTDIR inside a song
+# directory. build-pdfs then redirects the PDFs it builds for songs in that
+# directory according to the contents below.
+#
+# Format:
+#   - One line is a destination directory path; a leading ~ is expanded. PDFs
+#     are written there instead of next to the .song source.
+#   - Optionally add a line reading BOTH (or COPY) to build locally AND copy the
+#     PDFs to that directory, keeping both. Without it the build goes straight
+#     to the directory, with no local copy.
+#   - Blank lines and #-comment lines (like these) are ignored, and the path and
+#     keyword may appear in either order.
+#   - If the path is missing or is not a directory, build-pdfs warns and falls
+#     back to the usual local output.
+#
+# OUTDIR / .OUTDIR are meant to be git-ignored, so each machine or checkout can
+# point somewhere different (keep SAMPLE-OUTDIR tracked as the reference).
+#
+# Edit the path below and uncomment it (drop the leading "# ") to activate;
+# uncomment BOTH as well if you also want a local copy kept.
+
+# BOTH
+# ~/Dropbox/songsheets
