@@ -467,9 +467,14 @@
 % left-aligned box of at least \minmeasure -- so barlines never sit closer than
 % that, while lyric-heavy measures keep their (larger) natural width.
 %
-%   \measures{ {m1}{m2}{m3} }       ->  normal bars   | m1 | m2 | m3 |
-%   \measures[repeat]{ {m1}{m2} }   ->  repeat bars   |: m1 | m2 :|
-%   \measures[final]{ {m1}{m2} }    ->  final bar     | m1 | m2 |||
+%   \measures{ {m1}{m2}{m3} }         ->  normal bars   | m1 | m2 | m3 |
+%   \measures[repeat]{ {m1}{m2} }     ->  repeat bars   |: m1 | m2 :|
+%   \measures[repeatstart]{ {m1}{m2} }->  open repeat   |: m1 | m2 |
+%   \measures[repeatend]{ {m1}{m2} }  ->  close repeat  | m1 | m2 :|
+%   \measures[final]{ {m1}{m2} }      ->  final bar     | m1 | m2 |||
+%
+% repeatstart/repeatend split the repeat across several \measures lines: open the
+% passage with [repeatstart], close it with [repeatend], plain lines in between.
 %
 % The .song stays clean -- one braced group per measure -- and the iteration
 % lives here.  expl3 is deliberate: \tl_map_inline:nn maps cleanly over brace
@@ -509,9 +514,11 @@
 \int_new:N  \l__myls_index_int
 \bool_new:N \l__myls_first_measure_bool
 \cs_new_protected:Npn \__myls_openbar:n  #1
-  { \str_case:nnF {#1} { {repeat} {\leftrepeat} } {\normalbar} }
+  { \str_case:nnF {#1} { {repeat} {\leftrepeat} {repeatstart} {\leftrepeat} } {\normalbar} }
 \cs_new_protected:Npn \__myls_closebar:n #1
-  { \str_case:nnF {#1} { {repeat} {\rightrepeat} {final} {\stopbar} } {\normalbar} }
+  { \str_case:nnF {#1}
+      { {repeat} {\rightrepeat} {repeatend} {\rightrepeat} {final} {\stopbar} }
+      {\normalbar} }
 % #1 = the minimum-width target for this measure; #2 = the measure content.
 \cs_new_protected:Npn \__myls_measurebox:nn #1#2
   {
