@@ -3,6 +3,26 @@
 
 \def\normalbarwidth{.09em}
 
+% Barline LENGTH (height).  leadsheets draws every bar as a \rule whose length is
+% hardwired to the current font size: \genericbar sets \leadsheets@barheight =
+% \leadsheets@size and the rule runs from -0.2x (depth) to +0.8x (above baseline).
+% There is a public knob for bar *width* (\normalbarwidth, above) but none for
+% length, so scale it at the one chokepoint every bar funnels through.
+% \MyLSbarheightscale multiplies the rule's length (and the -0.2 depth with it, so
+% the bar grows symmetrically and stays centred the same); 1 = stock height.
+% This REACHES INTO a leadsheets @-internal (\genericbar / \leadsheets@size /
+% \leadsheets@barheight) because there is no documented bar-length API -- the
+% minimal targeted override.  thick / repeat / stop bars all compose \genericbar,
+% so they scale together; the repeat ':' colon is a separate text glyph and does
+% not scale (negligible).  \leadsheets@size is read at bar-use time, so this keeps
+% tracking the font size.
+\newcommand\MyLSbarheightscale{1.25}
+\renewrobustcmd*\genericbar[1]{%
+  \setlength\leadsheets@barheight\leadsheets@size
+  \setlength\leadsheets@barheight{\MyLSbarheightscale\leadsheets@barheight}%
+  \rule[-.2\leadsheets@barheight]{#1}{\leadsheets@barheight}%
+}
+
 \RequirePackage[T1]{fontenc}
 \RequirePackage[defaultsans]{lato}
 \RequirePackage[scale=0.96]{newtxtt}
