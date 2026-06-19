@@ -293,7 +293,20 @@ capturing the id in the title template into a global and restoring it locally in
 the env. **All of that is gone**: title dropped (redundant — it's already at the
 page top / on the song's last page), the `remarks` property deleted (nothing set
 it), and `tempo` dropped from the block. With no property reads, there is no song-id
-capture, no `\g__myls_song_id_tl`, and no expl3 — the environment is plain LaTeX.
+capture and no `\g__myls_song_id_tl` — the block is decoupled from the song.
+
+**View filtering.** An optional comma-list restricts the block to named views:
+`\begin{remarks}[chords]` (chords view only), `[chords,full]` (those two); a bare
+`\begin{remarks}` (empty list) prints in every view; the `debug` view is exempt and
+always shows every block. Implemented with the xparse `O{} +b` body-swallow (same
+mechanism as the chords/lyrics verse twins — body captured as an argument, then
+typeset or discarded). The decision (`\__myls_remarks_show:nTF`) is expl3 — a
+`\clist_if_in:NeTF` exact-item membership test of `\View` against the list, plus a
+`\str_if_eq:eeTF` debug-exemption — so the environment is *not* plain LaTeX, but the
+author's prose body keeps document catcodes (a `+b` argument is tokenised where
+`\begin{remarks}` appears, not where the environment is defined). The `\View` token
+the test reads is the renamed default-view name (was `default`, now **`full`**;
+`\providecommand\View{full}`).
 
 **Why outside the song env.** Inside `\begin{song}…\end{song}` leadsheets makes
 `^ _ | :` active (chord/barline shorthands — `songs.code.tex:143–146`, activated
@@ -474,10 +487,11 @@ each `\iftoggle{…}{#1}{\@gobble{#1}}`. The cost landed in the `.song`: the sam
 material was typed 3–4× per section, once per view. The overhaul should reach
 the same outputs with far less duplication. Planned views:
 
-1. **Default — lyrics + chords.** The `^{C}word` lyric body. Baseline. *Done.*
+1. **Full — lyrics + chords.** The `^{C}word` lyric body (chords over words). The
+   default build / suffixless `Song.pdf`; `\View` defaults to `full`. Baseline. *Done.*
 2. **Lyrics-only — DONE, the `lyrics` view.** The **same** `^{C}word` body with
    leadsheets' `print-chords=false`. No duplication — one body serves both 1 and 2.
-   Selected by `\def\View{lyrics}`; renders the same family as the default build
+   Selected by `\def\View{lyrics}`; renders the same family as the `full` view
    (lyric types print, chart twins swallowed) and only flips `print-chords`. Key
    detail: `print-chords=false` suppresses **only** `^{C}word` chords (`^` =
    `\getorprintchord`, gated by `print-chords` in `\leadsheets_place_above`); the
@@ -499,7 +513,7 @@ the same outputs with far less duplication. Planned views:
    letters); the reference hand-wrote the chart for exactly this reason. The
    chord skeleton is short, and it's the representation a band actually wants.
 4. **Phone-format.** *Pending.* Long-paper geometry (tall narrow page), otherwise
-   the default lyrics + chords layout. (Reference: `\Longpaper`.)
+   the `full` lyrics + chords layout. (Reference: `\Longpaper`.)
 
 View selection is a single `\def\View{…}` command-line flag (injected by
 `build-pdfs`) reduced to **one** clean view state in the `.sty`, not the

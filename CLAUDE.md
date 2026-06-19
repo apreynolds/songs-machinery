@@ -96,7 +96,11 @@ Quick orientation for reading a `.song` (details and rationale are in
   no coupling to the preceding song. It auto-positions with `\vfill` (flows to a new
   page if it doesn't fit) and travels into a songbook like any post-`\end{song}`
   body. Restyle via the `\MyLSremarks*` knobs (`…label`, `…headfont`, `…rule`).
-  Per-build on/off toggling is deliberately not built yet. Mechanism in `NOTES.md`.
+  - **View filtering** — an optional comma-list of view names limits the block to
+    those views: `\begin{remarks}[chords]` prints only in the `chords` view,
+    `\begin{remarks}[chords,full]` in those two. A bare `\begin{remarks}` (empty
+    list) prints in **every** view. The `debug` view is **exempt** — it always shows
+    every remarks block (it proofs everything on one sheet). Mechanism in `NOTES.md`.
 - **Coloured section boxes** are the *default* for every part type, so a bare
   `\begin{verse}` … `\begin{chorus}` … is already boxed in its own colour — no
   `[template=]` needed. The named templates (`versebox`, `chorusbox`, `solobox`,
@@ -153,10 +157,12 @@ Mechanism internals and rationale are in `NOTES.md`.
   `liftchords`, `custompartchords`. Each twin is a real verse type whose default
   template is its counterpart's coloured box, so — like the lyric types — it
   needs **no `[template=]`** and renders in the **same colour and same label**
-  (`V1:`/`C1:`/`In:`) as its lyric section. The default build prints the lyric bodies and swallows the twins; the
+  (`V1:`/`C1:`/`In:`) as its lyric section. The **`full` view** — the default
+  build, the suffixless `Song.pdf` (`\View` defaults to `full`) — prints the lyric
+  bodies (chords over words) and swallows the twins; the
   `chords` view (`Song--chords.pdf`) prints the twins and suppresses every
   lyric verse type. The **`lyrics` view** (`Song--lyrics.pdf`) prints the same
-  lyric bodies as the default build but with `print-chords=false`, so `^{C}word`
+  lyric bodies as the `full` view but with `print-chords=false`, so `^{C}word`
   chords are stripped to leave the words; `_{C}` chord-only tokens in `\measures`
   still print (the documented `^`=print-or-place / `_`=write split), so an
   instrumental section keeps its progression. The **`debug` view**
