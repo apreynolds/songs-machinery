@@ -526,6 +526,23 @@ it cannot help without an unflatteringly small factor (`AtTheEndOfTheDay` full v
 needs ≈0.75 to drop page 3 — its whole last third spills, so it is not really the
 marginal case the knob is for).
 
+**Songbook scoping is automatic — no reset code in `\bookinclude`.** Two facts
+combine. (1) `\includeleadsheet` runs with `gobble-preamble` (it discards everything
+up to the first `\begin`, `leadsheets.library.external.code.tex`:151,
+`#1 \begin #2`), so a `\resize` in a song's **preamble** is gobbled in a book —
+like `\ForceEvenPages` — and must be placed in the **body** (after
+`\begin{document}`) to take effect. (2) `\bookinclude` wraps the include in
+`\begingroup…\endgroup` (for `\input@path`), and `\resize` is a plain local
+`\renewcommand`, so a body `\resize` is local to that song's group and **reverts at
+its `\endgroup`** — the next song starts at the inherited factor. Verified with a
+two-song book: song A's body `\resize[0.6]` changed A's page but left B
+**pixel-identical** to a control book where A had no `\resize` (no leak); and A's
+page *did* change vs that control (the body resize genuinely applies inside a book).
+Consequence, deliberately not "fixed": a `\resize` in the **songbook preamble** is a
+book-wide default that each song can locally override and revert from. An explicit
+`\renewcommand\MyLSrf{1}` in `\bookinclude` was therefore *rejected* — it would buy
+nothing (the group already resets) and would clobber that book-wide default.
+
 ## Tooling / debugging
 
 ### Vimtex quickfix behaviour

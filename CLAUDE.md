@@ -266,6 +266,15 @@ a bug. But when a part *just barely* overflows, one knob can buy it back.
   overflow page is a genuine multi-pager and would need an unflatteringly small
   factor. Mechanism (which tcolorbox defaults it restates, why placement is free)
   in `NOTES.md`.
+  - **In a songbook, put `\resize` in the song *body* (after `\begin{document}`),
+    not the preamble** — `\includeleadsheet` gobbles each song's preamble (same as
+    a left-in `\ForceEvenPages`), so a preamble `\resize` is silently ignored in a
+    book (it still works standalone). Body placement works **both** standalone and
+    in a book, so it is the portable spot. A body `\resize` is **automatically
+    scoped to its own song**: `\bookinclude` wraps the include in a group and
+    `\resize` is a local `\renewcommand`, so it reverts for the next song — no
+    leak (pixel-verified). A `\resize` in the *songbook's* preamble instead sets a
+    **book-wide default** that any song may locally override and revert from.
 
 ## Songbooks & even-page output
 
