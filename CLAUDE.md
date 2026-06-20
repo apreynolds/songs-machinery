@@ -360,15 +360,29 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
 
 ## Key files 
 
-- `/Users/preynol1/repos/1sys/tex/songs/` — the custom `.sty` files (primary work area)
+- **This repository** — the custom `.sty` files (`MyLeadsheets.sty` et al.); the
+  primary work area, edited **in place**. The repo may be checked out standalone
+  or added to another project as a `.machinery` submodule; either way, *here* is
+  where the `.sty` work happens — there is no separate "upstream" copy to edit
+  instead.
 - `/usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/` — system-installed leadsheets package
 - `~/.config/vim/custom/vimtex.vim` — vimtex plugin configuration; sets `aux_dir`
 - `~/.config/latexmk/latexmkrc` — global latexmk config; puts aux/log files in
   `~/.cache/latexmk/${project_name}_$hash/` (used by `Generate*` commands; separate from
   vimtex's cache dir, no conflict)
-- `~/.config/zsh/.zprofile` — sets `TEXINPUTS="$HOME/repos/1sys/tex//:"` so that files in
-  the songs repo (including the PR#46-fixed `leadsheets.library.songs.code.tex`) shadow the
-  system copies
+- **Shadowing the system leadsheets files.** This repo carries its own
+  `MyLeadsheets.sty` and the PR#46-fixed `leadsheets.library.songs.code.tex`,
+  which must win over the texlive copies. Two ways that happens, depending on how
+  the repo is deployed:
+  - *Standalone* — shadowing works only because the repo lives **inside** a
+    directory tree that the shell puts on `TEXINPUTS` recursively (Patrick's
+    `~/.config/zsh/.zprofile` exports a leading `.` plus a recursive `~/repos`
+    tree, then a trailing `:` to re-append the system default). This is tied to
+    the checkout location.
+  - *As a `.machinery` submodule* — the repo is *not* on that tree, so the parent
+    project's `.latexmkrc` prepends `.machinery//` to `TEXINPUTS` at build time
+    (a location-independent walk-up that finds the nearest `.machinery`). This is
+    the portable mechanism; no shell setup needed.
 
 ## Sample files (initial)
 

@@ -62,9 +62,12 @@
 # back to the usual local output (a bad path warns). OUTDIR takes precedence
 # over .OUTDIR if both exist.
 #
-# Relies on the global latexmkrc for the pdflatex invocation
-# (--shell-escape, nonstopmode) and on TEXINPUTS (set in .zprofile) for the
-# PR#46-shadowed leadsheets file.
+# Relies on the global latexmkrc for the pdflatex invocation (--shell-escape,
+# nonstopmode) and on TEXINPUTS for the PR#46-shadowed leadsheets file. How that
+# repo's .sty/.tex shadow the texlive copies depends on deployment: a standalone
+# checkout is found via the shell's recursive ~/repos TEXINPUTS tree; a
+# .machinery submodule is found via the parent project's .latexmkrc, which
+# prepends .machinery// to TEXINPUTS.
 
 set -uo pipefail
 
