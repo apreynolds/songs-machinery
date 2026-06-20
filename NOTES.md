@@ -6,6 +6,13 @@ notes. CLAUDE.md holds the live authoring contracts and design goals; this file
 is the "when you actually touch that code" detail. Scope is the whole song-sheet
 project, not just the `leadsheets` package.
 
+The project is in **maintenance/tweak mode** — the intended features and formats
+are implemented and the planned feature work is **complete**; there is no active
+backlog. A few sections below document reference-only escape hatches (e.g. `\mw`)
+or accepted behaviours, not open TODOs. Some historical mentions refer to old
+reference files (`*-REFERENCE`) and the removed `samples/` directory; these are
+kept as a record of how things were built/verified and are not live paths.
+
 ## Reminders / how to investigate
 
 - **System package source:** `/usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/`
@@ -195,8 +202,8 @@ prepends `{dir/}` to `\input@path` so the nested `\input` searches it too; the
 group scopes it per song. **Caveat — `\input@path` is consulted only after the
 bare name fails via cwd/`TEXINPUTS`, so a stale same-named body still wins if one
 is reachable.** This bit `samples/Uberlin--input.song` (an old raw-pipe copy under
-the `~/repos/1sys/tex//` `TEXINPUTS` tree) silently shadowing the live
-`rem-songs/song-files/Uberlin--input.song`; renamed to `UberlinDemo--input.song`
+the `~/repos/1sys/tex//` `TEXINPUTS` tree) silently shadowing a real song's
+live `Uberlin--input.song`; the sample copy was renamed to `UberlinDemo--input.song`
 so its bare name can't collide. Moral: don't give a sample body the same
 `<RealSong>--input.song` name as a real song's body anywhere under `TEXINPUTS`.
 
@@ -376,7 +383,7 @@ flips, which is why later whole cells still grey). Hence:
 No clean `.sty`-only fix exists: the capture is leadsheets' space-delimited scan over
 *input* tokens, before `\bg` expands, so redefining `\bg` can't escape it; only patching
 leadsheets' chord internals would — against the "avoid leadsheets internals" goal.
-Verified visually on `rem-songs/CantGetThere.song`'s chorus (the file that surfaced it).
+Verified visually on `CantGetThere.song`'s chorus (the file that surfaced it).
 
 ### Barline appearance — width and length
 
@@ -404,10 +411,17 @@ the absence of a documented bar-length API. The repeat `:` colon
 (`\leadsheets@repeatcolon`) is a separate text glyph and does **not** scale, so on
 `|:` / `:|` bars the rules grow but the dots don't (negligible at ~1.25).
 
-### Deferred — the key label following transposition
+### Key label under transpose — handled via `\fixedchord` (legacy note)
+
+**Not deferred — resolved by hand.** In practice the displayed key is set
+directly: a `transpose=` wrapper writes the key it wants in `key={\fixedchord{…}}`
+(accidentals as `\sharp`/`\flat`), and `\fixedchord` renders that glyph *without*
+transposing it — so the printed label always reads correctly, independent of
+`transpose=`. The auto-follow conditional sketched below was therefore never
+needed; it is kept only as a record of how it *would* be wired if ever wanted.
 
 The title template prints `\songproperty{key}` raw, so a `transpose=` wrapper's
-PDF currently shows the *authored* key (e.g. "C") even though its chords are in D;
+PDF shows the *authored* key (e.g. "C") even though its chords are in D;
 the original-key wrapper happens to read correctly. Making the key follow the
 transposition is the same conditional flagged for capo — the stock template uses
 `\writechord{\songproperty{key}}` (`songs.code.tex:481`), which transposes — so:
@@ -551,7 +565,7 @@ Vimtex's log parser only surfaces `Package X Warning:` patterns into the quickfi
 window — `Class X Warning:` messages (e.g. KOMA's own warnings about incompatible
 packages) appear in the raw log but are invisible in the quickfix. When diagnosing
 warnings, check the raw log at `~/.cache/latexmk/{dirname}-{jobname}/` (vimtex
-compilations) or `~/.cache/latexmk/${project_name}_$hash/` (Generate* commands).
+compilations) or `~/.cache/latexmk/{parent-dir}-{jobname}/` (`build-pdfs`).
 
 ## build-pdfs — status
 
@@ -647,7 +661,16 @@ The `-CAPO`/`-OriginalKey` (single-hyphen, *different musical content*) vs
 `--chords`/`--lyrics` (double-hyphen, *different presentation*) suffix split is the
 convention to preserve.
 
-## Future work — output views from one `.song`
+## Output views — design history
+
+The output-views work here is **complete** (views 1–4 all DONE, grayscale DONE)
+and is kept as design history. The ideas once tracked as future work are all
+settled: the transpose-time key label is set by hand via `\fixedchord` in `key=`
+(see *Key label under transpose* above, kept as a legacy note); `\measures`/chart
+behaviour is satisfactory as-is, with no aligned-grid rework planned;
+`[both]`/`[shared]` was decided against in favour of the macro-reference pattern;
+`\mw{<dim>}` is retained only as a documented, low-priority escape hatch; and the
+few unconverted legacy raw-pipe files compile fine and are no concern.
 
 The reference produced several PDFs from one source via a tangle of `\newtoggle`
 flags that cross-set each other (`LyricsWithChords`, `LyricsNoChords`,
@@ -751,6 +774,11 @@ its natural width — the key moves only the *minimum*. Verified on
 `samples/ChordsVariantDemo.song` (`versechords[minmeasure=3cm]` widens V1's bars;
 C1/Out revert).
 
+**`[both]`/`[shared]` was decided against** — the macro-reference pattern (define
+the shared body once, reference it in both twins; see CLAUDE.md's *Shared
+instrumental sections*) is the chosen answer. The proposal below is kept only as a
+record.
+
 A third case rounds this out: **instrumental sections that should appear
 identically in both the lyric and chart outputs** — a solo, intro, outro, or
 break whose body is just a chord progression with no lyrics. Rather than
@@ -777,6 +805,10 @@ Two things to decide when building `[both]`:
   explicit `[in=lyrics,chart]` form that scales to any subset) may read better.
 
 ### Chart-only body — desired capabilities
+
+**Status: not planned.** Current charts are satisfactory; the list below is
+reference only. `\mw` is kept as a low-priority escape hatch (see its bullet), and
+barline-grid alignment is not on the roadmap.
 
 The chart builder (extending `\measures`) should support:
 
