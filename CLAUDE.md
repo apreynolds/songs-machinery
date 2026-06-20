@@ -244,6 +244,29 @@ at most one. Suffix convention: `--chords`/`--lyrics` (double hyphen) marks a
 hyphen) marks *different musical content*; `--input` (double hyphen) marks the
 shared body include, never compiled directly.
 
+## Fitting — `\resize`
+
+Songs aim (within reason) to fit two pages, and song parts are **atomic** — a
+verse/chorus never splits across a page, so an overflowing part bumps wholesale
+to the next page, often leaving a blank tail. That whitespace is a feature, not
+a bug. But when a part *just barely* overflows, one knob can buy it back.
+
+- **`\resize[<factor>]` — per-document vertical tightener.** Put it before *or*
+  after `\begin{document}`; it scales the three **vertical**-space contributors
+  by one factor, leaving **font size, page geometry, and every horizontal measure
+  untouched** (each song still feeds a shared songbook, so type stays uniform;
+  chords stay `\normalsize`). The three levers: (1) interline gap inside a section
+  (`\openup\mysonglinesep`), (2) section-box internal padding (`top`/`bottom`/
+  `boxsep`), (3) the gap *between* consecutive boxes (`beforeafter skip`).
+  `\resize[1]` is an **exact, pixel-verified no-op**; `<1` tightens, `>1` loosens;
+  the default arg is `0.95` (a gentle nudge — pass `0.9`/`0.85` to smush harder).
+  The factor multiplies **on top of** the base length knobs (`\mysonglinesep`, the
+  2mm/1mm box padding stay the per-quantity levers), so the two compose. It is the
+  right tool only for a *marginal* bump: a song whose whole last third is on the
+  overflow page is a genuine multi-pager and would need an unflatteringly small
+  factor. Mechanism (which tcolorbox defaults it restates, why placement is free)
+  in `NOTES.md`.
+
 ## Songbooks & even-page output
 
 These PDFs are read on screen in two-page (spread) mode, where page parity

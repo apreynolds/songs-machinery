@@ -99,6 +99,31 @@
 \newversetype{custompart}   % generic catch-all section (was "mypart" in the reference)
 
 % ---------------------------------------------------------------------------
+% \resize -- single-knob vertical tightener
+% ---------------------------------------------------------------------------
+% A song's parts are atomic (a verse/chorus/... never splits across a page), so
+% a part that *just* overflows bumps wholesale to the next page and leaves the
+% blank tail behind.  \resize lets one document buy back a little vertical room
+% -- WITHOUT touching font size, page geometry, or any horizontal measure -- by
+% scaling the three vertical-space contributors by a single factor:
+%   1. interline gap inside a section  (\openup\mysonglinesep, default 1ex)
+%   2. section-box internal padding    (tcolorbox top/bottom 2mm, boxsep 1mm)
+%   3. gap *between* consecutive boxes  (beforeafter skip, 0.5\baselineskip)
+% Item 2/3's stock numbers are tcolorbox's reset defaults (the boxes leave those
+% keys unset today); \resize sets them explicitly, so factor 1 reproduces the
+% current output byte-for-byte and is an exact no-op.  Put \resize[0.95] before
+% OR after \begin{document}: the factor is read live at each box and each
+% section-format expansion, so placement is free.  <1 tightens, >1 loosens.
+% Font size is deliberately NOT scaled (every song is destined for a shared
+% songbook, where uniform type matters) and chords stay \normalsize.  The factor
+% multiplies ON TOP of the base knobs (\mysonglinesep, the 2mm/1mm box padding),
+% so the two compose -- \resize is the per-document "smush everything a touch"
+% lever, the named lengths stay the per-quantity ones.  Default 0.95 is a gentle
+% nudge; pass a smaller number (0.9, 0.85) to smush harder.
+\newcommand\MyLSrf{1}                       % resize factor; 1 = stock spacing
+\newcommand\resize[1][0.95]{\renewcommand\MyLSrf{#1}}
+
+% ---------------------------------------------------------------------------
 % Coloured song-section boxes  (approach B, plain-LaTeX style)
 % ---------------------------------------------------------------------------
 % Each leadsheets part type (verse, chorus, ...) gets its own tcolorbox-based
@@ -135,7 +160,13 @@
 \newcommand\MyLSboxcolback[1]{\ifMyLSgray white\else #1\fi}
 \makeatletter
 \newcommand\myleadsheetsboxbegin[1]{%
-  \tcolorbox[left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=\MyLSboxcolback{#1}]%
+  % top/bottom/boxsep and beforeafter skip are tcolorbox's own reset defaults,
+  % restated here only so \MyLSrf (\resize) can scale them; at factor 1 the box
+  % is unchanged.  See the \resize block above.
+  \tcolorbox[left=0pt,right=0pt,boxrule=0mm,arc=0mm,colback=\MyLSboxcolback{#1},%
+    top=\MyLSrf\dimexpr2mm\relax, bottom=\MyLSrf\dimexpr2mm\relax,%
+    boxsep=\MyLSrf\dimexpr1mm\relax,%
+    beforeafter skip balanced={\MyLSrf\dimexpr0.5\baselineskip\relax plus 2pt}]%
   \itemize
   \@itemdepth=0
   \ifobeylines
@@ -222,9 +253,9 @@
 % shadows the global verses-format, so re-assert \bfseries there for bold *and*
 % keep its (desired) italic.  (The class italicises info/format the same way.)
 \setleadsheets{
-  verses-format       = {\bfseries\openup\mysonglinesep} ,
+  verses-format       = {\bfseries\openup\MyLSrf\mysonglinesep} ,
   verses-label-format = \mdseries ,
-  chorus/format       = {\bfseries\itshape\openup\mysonglinesep} ,
+  chorus/format       = {\bfseries\itshape\openup\MyLSrf\mysonglinesep} ,
 }
 
 % One-off, named (not numbered; all use the default ":" separator).  Short

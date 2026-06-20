@@ -484,6 +484,48 @@ must use scratch registers `\dimen0`/`\box0`, **not** `\dimen@`/`\z@`. An
 songbook macros harmless if `hyperref` is somehow absent (won't clobber the real
 ones, which load earlier).
 
+### `\resize` — single-knob vertical tightener
+
+Authoring contract is CLAUDE.md's *Fitting — `\resize`*; this is the how. Lives in
+`MyLeadsheets.sty`'s "`\resize`" block (just above the coloured-box templates).
+
+**Shape.** `\newcommand\MyLSrf{1}` (the factor) + `\newcommand\resize[1][0.95]
+{\renewcommand\MyLSrf{#1}}`. `\MyLSrf` is read **live** at each box and each
+section-format expansion (it is just a digit-string), so the command works in the
+preamble *or* the body — nothing is frozen at call time. `\resize` only
+`\renewcommand`s the factor; never call it inside a `song`/group if you want a
+document-wide effect (it would revert at the group end like any local def).
+
+**The three levers, and why factor 1 is an exact no-op.** The section boxes today
+leave `top`/`bottom`/`boxsep`/`beforeafter skip` **unset**, inheriting tcolorbox's
+`reset@core` defaults (`tcolorbox.sty`:2832 ff.): `top=2mm, bottom=2mm, boxsep=1mm,
+beforeafter skip balanced=0.5\baselineskip plus 2pt`. `\resize` makes the box
+**restate those exact values, each prefixed by `\MyLSrf`**:
+`top=\MyLSrf\dimexpr2mm\relax`, … , `beforeafter skip balanced={\MyLSrf\dimexpr
+0.5\baselineskip\relax plus 2pt}`. The third lever is the interline gap:
+`verses-format`/`chorus/format` change `\openup\mysonglinesep` →
+`\openup\MyLSrf\mysonglinesep`. At `\MyLSrf=1` every product is the stock value, so
+the output is **pixel-identical** to the pre-`\resize` `.sty` — verified by
+rendering `AtTheEndOfTheDay` (full view) at 100dpi under both and `md5`-matching all
+three pages.
+
+**Arithmetic.** `\MyLSrf\dimexpr2mm\relax` is the decimal-coefficient × internal-
+dimen form (e-TeX): a macro expanding to `0.95` times a `\dimexpr` dimen is a valid
+`<dimen>`; the glue `…\relax plus 2pt` likewise parses as a `<glue>` in the
+`beforeafter skip` key. `\openup\MyLSrf\mysonglinesep` is `0.95\mysonglinesep`
+(coefficient × length register) — no `\dimexpr` needed there. The
+`beforeafter skip` keeps `\baselineskip`-relative (evaluated per box, in the body
+font), so it tracks the real body leading rather than whatever leading happened to
+be in force when `\resize` was called.
+
+**Scope deliberately vertical-only.** Font size, `geometry`, and horizontal
+measures (`\minmeasure`, `\measurepad`, chord size) are **not** scaled — songs feed
+a shared songbook where uniform type matters (CLAUDE.md design goals). So `\resize`
+reclaims height only; on a song whose overflow page holds a large chunk (not a hair)
+it cannot help without an unflatteringly small factor (`AtTheEndOfTheDay` full view
+needs ≈0.75 to drop page 3 — its whole last third spills, so it is not really the
+marginal case the knob is for).
+
 ## Tooling / debugging
 
 ### Vimtex quickfix behaviour
