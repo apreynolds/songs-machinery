@@ -2,29 +2,26 @@
 
 This repo contains custom LaTeX `.sty` files, based on the `leadsheets` package
 (https://github.com/cgnieder/leadsheets) which uses KOMA-Script under the hood
-(`leadsheet.cls` loads `scrartcl`).  The package doesn't seem to be maintained
-any longer. I've cloned the repo into the directory
-`~/Documents/5create/latex/leadsheets-clone`, but the actual functional package is found
-here: `/usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/` Note also the
-file `leadsheets.library.songs.code.tex` which fixes an issue that was caused by
-a more general LaTeX update; see https://github.com/cgnieder/leadsheets/pull/46. 
+(`leadsheet.cls` loads `scrartcl`). The package is no longer maintained. The
+functional package lives at
+`/usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/`. Note the file
+`leadsheets.library.songs.code.tex`, which carries a fix for an issue caused by a
+more general LaTeX update; see https://github.com/cgnieder/leadsheets/pull/46.
 
-- `MyLeadsheets-TEMP-REFERENCE.sty` is an older document that I hacked together
-  over years, without any knowledge of KOMA-Script, and using a LaTeX
-  compilation method that hid all warnings. Nonetheless, it did what I wanted it
-  to do and produced functional song sheet pdfs. This file can be used as a
-  reference-only (no edits necessary) for desired formats, features, and
-  functionality. 
-- **`MyLeadsheets.sty`** — This is the main file, to be re-constructed cleanly,
-  carefully, from the ground up, incorporating formats, features, and
-  functionality as we go.
+**`MyLeadsheets.sty`** is the main file — a clean, KOMA-native rebuild (replacing
+an older package hacked together over years without KOMA knowledge). The repo is
+now in **maintenance/tweak mode**: the features and formats I wanted are in place,
+and work now means small adjustments to `MyLeadsheets.sty` or the `build-pdfs`
+script. There is no active feature backlog; the design history and a couple of
+low-priority reference items live in NOTES.md.
 
 See **`NOTES.md`** for reference detail kept out of these instructions: package
-issues, resolved problems, implemented-feature mechanism internals, and
-tooling/debugging notes. This file holds the live authoring contracts and design
-goals; NOTES.md is the "when you actually touch that code" detail.
+issues, resolved problems, implemented-feature mechanism internals, design
+history, and tooling/debugging notes. This file holds the live authoring
+contracts and conventions; NOTES.md is the "when you actually touch that code"
+detail.
 
-## Design goals for the overhaul
+## Design goals / principles
 
 - **Compile completely cleanly** — no warnings in the log, not just no errors
 - **Minimize hackiness** — prefer KOMA-native solutions over third-party packages
@@ -300,13 +297,13 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
   `hyperref`. Restyle via `\renewcommand\MyLStoclinktext{…}`; opt one song out of
   the link by reverting that line to plain `\clearoddpage\includeleadsheet`.
 
-## Known issues / work in progress
+## Behaviour notes & gotchas
 
-- **`\measures` min-width is not a column grid.** Wide (lyric-heavy) measures
-  expand past `\minmeasure`, so barlines do *not* align vertically across the
-  lines of a section — they're only guaranteed *no closer* than the minimum. If
-  an aligned grid is ever wanted (bar N at the same x on every line), that's a
-  separate, harder feature (fixed-width / `tabular`-column measures).
+- **`\measures` min-width is not a column grid (by design).** Wide (lyric-heavy)
+  measures expand past `\minmeasure`, so barlines are *not* aligned vertically
+  across the lines of a section — they're only guaranteed *no closer* than the
+  minimum. This is accepted, not a TODO; an aligned grid (bar N at the same x on
+  every line) would be a separate, harder feature and is not planned.
 
 - **`\repeatbar` — ported and live.** The TikZ repeat glyph (two brick-red dots +
   a slash) is now in `MyLeadsheets.sty` (the "Inline markers" block), so legacy
@@ -314,11 +311,9 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
   macro**, not wired into the `\measures`/chart builder; whether repeat marks
   should instead be a `\measures` style remains an open design question, but the
   port doesn't pre-empt it (the builder already has the `repeat` *style*, giving
-  `|: … :|` barlines, which is a different thing from the inline glyph).
-  `samples/Uberlin.song` is still a transitional raw-pipe file (`| ^{Gm}word |`,
-  hand `\hspace`), now also exercising the new header properties (`arrangement`,
-  `tuning`, `genre`); its bridge uses bare `_{…}` chords so it compiles, but it is
-  not yet converted to `\measures`.
+  `|: … :|` barlines, which is a different thing from the inline glyph). A few
+  legacy raw-pipe files (`| ^{Gm}word |`, hand `\hspace`) remain unconverted to
+  `\measures` but still compile.
 
 - **`\notebox` — promoted; `\mydot` — superseded by `\beat`/`\beatdot`.** Both were
   ported verbatim from the reference into `MyLeadsheets.sty` (the "Inline markers"
@@ -366,10 +361,9 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
   where the `.sty` work happens — there is no separate "upstream" copy to edit
   instead.
 - `/usr/local/texlive/2025/texmf-dist/tex/latex/leadsheets/` — system-installed leadsheets package
-- `~/.config/vim/custom/vimtex.vim` — vimtex plugin configuration; sets `aux_dir`
-- `~/.config/latexmk/latexmkrc` — global latexmk config; puts aux/log files in
-  `~/.cache/latexmk/${project_name}_$hash/` (used by `Generate*` commands; separate from
-  vimtex's cache dir, no conflict)
+- `~/.config/vim/custom/vimtex.vim` — vimtex config; sets `aux_dir` so aux/log
+  files land under `~/.cache/latexmk/…`, out of the working tree (where to look
+  when checking that a compile is clean)
 - **Shadowing the system leadsheets files.** This repo carries its own
   `MyLeadsheets.sty` and the PR#46-fixed `leadsheets.library.songs.code.tex`,
   which must win over the texlive copies. Two ways that happens, depending on how
@@ -384,27 +378,20 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
     (a location-independent walk-up that finds the nearest `.machinery`). This is
     the portable mechanism; no shell setup needed.
 
-## Sample files (initial)
+- `SAMPLE-OUTDIR` (repo root, tracked) — template for `build-pdfs` output
+  redirection: copy/rename it to `OUTDIR` (or `.OUTDIR`) inside a song directory
+  to send that directory's built PDFs elsewhere. Its own header comments explain
+  the format.
 
-- `/Users/preynol1/repos/4music/rem-songs` — **current testing focus.** A
-  separate git repo of R.E.M. `.song` files (flat at the top level) plus its own
-  copy of the `build-pdfs` script. This is where new format/feature work is
-  exercised in bulk now.
-- `samples/` (in this directory) — test song files used to verify clean
-  compilation; `TheOneILove.song` is the primary test file used so far. 
-- `~/Documents/4music/_song-sheets-WIP/samples/TheOneILove-REFERENCE.song` (and associated pdf) is
-  the reference. This file produced several pdfs with formats and features that
-  I'd like to either re-incorporate, or re-think. The single `.song` file was
-  used to also produce `TheOneILove-Chart-REFERENCE.pdf`
-  `TheOneILove-Chords-REFERENCE.pdf` `TheOneILove-Lyrics-REFERENCE.pdf`)
-  
+## Song files for testing
 
-## More Sample files in ~/Documents/4music/_song-sheets-WIP (eventual)
+The `.sty` work is verified against real song files kept in their own repos, not
+in this one (the old `samples/` directory is gone). I'll point you at the relevant
+song directory per conversation; such a directory typically carries its own copy
+of `build-pdfs`. `TEMP/` here (gitignored) holds local scratch copies for trying
+changes without touching a canonical repo.
 
-The directories `covers-copy` `rem-copy` `stevie-copy` `written-copy` `xmas-copy`
-(found in `samples`) are copies of song sheets that I've created in the past.
-(The R.E.M. ones in `rem-copy` are legacy; active R.E.M. work now lives in the
-`/Users/preynol1/repos/4music/rem-songs` repo noted above.)
-
-- IGNORE .PDFs (although I may ask to read particular pdfs if necessary)
-- IGNORE .mp3, .mscz, .mid, .gsheet, .gdoc, .docx
+When working in a song repo, ignore compiled/binary assets: `*.pdf` and LaTeX aux
+files (`*.aux`, `*.log`, `*.fls`, …), plus music assets `*.mp3`, `*.mscz`, `*.mid`,
+`*.gsheet`, `*.gdoc`, `*.docx`. (I may occasionally ask you to read a particular
+PDF.)
