@@ -9,9 +9,9 @@ project, not just the `leadsheets` package.
 The project is in **maintenance/tweak mode** — the intended features and formats
 are implemented and the planned feature work is **complete**; there is no active
 backlog. A few sections below document reference-only escape hatches (e.g. `\mw`)
-or accepted behaviours, not open TODOs. Some historical mentions refer to old
-reference files (`*-REFERENCE`) and the removed `samples/` directory; these are
-kept as a record of how things were built/verified and are not live paths.
+or accepted behaviours, not open TODOs. Some "verified on …" mentions name old
+dev/reference files (`*-REFERENCE` and the deleted `samples/` test songs) by bare
+filename; these are a record of how things were checked, not live paths.
 
 ## Reminders / how to investigate
 
@@ -142,7 +142,7 @@ magic comment. The song body (the `\begin{verse}…` sections, **no preamble**)
 lives in `Song--input.song`; each wrapper sets its own `\begin{song}[…]{…}`
 options and `\input`s that body. `build-pdfs` compiles each wrapper to one PDF and
 **skips `*--input.song`** (no preamble → can't compile). Verified on
-`samples/Uberlin{,-CAPO}.song` and `samples/TransposeDemo{,-OriginalKey}.song`.
+`Uberlin{,-CAPO}.song` and `TransposeDemo{,-OriginalKey}.song`.
 
 This **replaced** the earlier magic-comment machinery — all removed: the
 `%! capo-pair` / `%! transpose-pair` comments, the injected `\def\ConcertArrangement`
@@ -201,7 +201,7 @@ same-named body elsewhere on the recursive `TEXINPUTS` is picked up instead. Fix
 prepends `{dir/}` to `\input@path` so the nested `\input` searches it too; the
 group scopes it per song. **Caveat — `\input@path` is consulted only after the
 bare name fails via cwd/`TEXINPUTS`, so a stale same-named body still wins if one
-is reachable.** This bit `samples/Uberlin--input.song` (an old raw-pipe copy under
+is reachable.** This bit an old raw-pipe `Uberlin--input.song` copy (under
 the `~/repos/1sys/tex//` `TEXINPUTS` tree) silently shadowing a real song's
 live `Uberlin--input.song`; the sample copy was renamed to `UberlinDemo--input.song`
 so its bare name can't collide. Moral: don't give a sample body the same
@@ -601,7 +601,7 @@ The only sibling-producing magic comment:
   lists in the `.sty` must stay complete — a missing lyric type leaks lyrics into
   the chords sheet, a missing twin leaks a chart into the lyric sheet. Because the
   twin is a real verse type it reproduces its counterpart's colour *and* label
-  (`V1:`/`C1:`/`In:`) automatically. Verified on `samples/ChordsVariantDemo.song`.
+  (`V1:`/`C1:`/`In:`) automatically. Verified on `ChordsVariantDemo.song`.
 - **lyrics view** — same `compile_view()` path (the `case` arm is just
   `chords | lyrics`), injecting `\def\View{lyrics}` for `Song--lyrics.pdf`. The
   `.sty` flips `print-chords=false` for this view only; the family selection is
@@ -692,7 +692,7 @@ the same outputs with far less duplication. Planned views:
    regardless (`songs.code.tex:143-144`). So lyric sections become words-only while
    instrumental sections (a `\measures` line of `_{C}` chords, no `^{}word`) keep
    their progression — the sensible outcome, and it falls out of the documented
-   `^`/`_` split with no extra code. Verified on `samples/ChordsVariantDemo.song`.
+   `^`/`_` split with no extra code. Verified on `ChordsVariantDemo.song`.
 3. **Chart-only (no lyrics) — DONE, the `chords` view.** A **separate** body
    built with `\measures` inside per-type chart twins `\begin{versechords}` …
    (see *build-pdfs — status*).
@@ -771,7 +771,7 @@ as a `minmeasure` key `\keys_define`d onto the `leadsheets/<type>` path of every
 managed section type (lyric types *and* chart twins, so it works on an
 `\measures`-bearing intro/outro too, not just charts). Wider content still keeps
 its natural width — the key moves only the *minimum*. Verified on
-`samples/ChordsVariantDemo.song` (`versechords[minmeasure=3cm]` widens V1's bars;
+`ChordsVariantDemo.song` (`versechords[minmeasure=3cm]` widens V1's bars;
 C1/Out revert).
 
 **`[both]`/`[shared]` was decided against** — the macro-reference pattern (define
