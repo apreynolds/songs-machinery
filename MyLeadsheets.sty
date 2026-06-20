@@ -298,11 +298,13 @@
 %   \notebox{<text>} -- boxed performance note, e.g. \notebox{pause}.  LOAD-
 %       BEARING: the capo header label (\notebox{capo N}, title template below)
 %       uses it; also used directly in several .song files.  Kept.
+%   \note{<text>}    -- lighter inline tag: a bold typewriter `[text]' in blue,
+%       no frame, for a quick bracketed annotation.  The un-boxed sibling of
+%       \notebox; used in .song bodies.
 %   \repeatbar       -- TikZ-drawn repeat glyph (two dots + a slash), used as
 %       $\repeatbar$ in legacy raw-pipe .song files.  Ported from the reference
-%       .sty so those files compile.  Whether repeat marks should instead live
-%       in the \measures builder is a separate, still-open question (CLAUDE.md);
-%       porting the glyph here does not pre-empt it.  Kept.
+%       .sty so those files compile.  (Whether repeat marks might instead live in
+%       the \measures builder is noted in CLAUDE.md, but is not planned.)  Kept.
 %   \beatdot / \beat -- brick-red beat dot marking a sustained-chord beat.
 %       \beatdot is the BARE dot for OVER-A-WORD use (^{\beatdot}); \beat is the
 %       self-spacing standalone marker for charts (| A \beat \beat B |), padded by
@@ -481,13 +483,25 @@
 \newcommand\moderate {\MyLSdifficultyglyph{RoyalBlue}{(0,0.5) -- (-0.45,-0.35) -- (0.45,-0.35) -- cycle}}
 \newcommand\difficult{\MyLSdifficultyglyph{black}{(0,0.5) -- (0.4,0) -- (0,-0.5) -- (-0.4,0) -- cycle}}
 
-% TEMPORARY (2026-06-17): \transup / \transdown arrows ported verbatim from the
-% reference .sty so legacy songs carrying `istransposed={\transup 2}` compile.
-% Not yet wired into the header template (the property is merely stored, not
-% printed); the whole transpose-label mechanism is slated for a redesign — drop
-% or rework these then.  See the matching `istransposed' property below.
-\newcommand\transdown{\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Downarrow$}}}
-\newcommand\transup  {\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Uparrow$}}}
+% DEPRECATED legacy shim: \transup / \transdown arrows, ported verbatim from the
+% reference .sty so legacy songs carrying `istransposed={\transup 2}' still
+% compile.  They are NOT wired into the header template (the `istransposed'
+% property below is merely stored, never printed) -- transpose labels are now set
+% by hand via \fixedchord in key=, so these are kept only for backward
+% compatibility and are slated for removal.  Each fires a ONE-time-per-document
+% deprecation warning when executed (same pattern as \mydot).  Caveat: the
+% value-only use inside an unrendered `istransposed' property never executes them,
+% so a song that merely stores the property stays silent -- the warning fires only
+% where \transup / \transdown are actually typeset.
+\newcommand\MyLStransposewarning{%
+  \PackageWarning{MyLeadsheets}{%
+    \protect\transup\space/ \protect\transdown\space and the `istransposed'
+    property are deprecated and will be removed; set transpose labels by hand
+    via \protect\fixedchord\space in key=}%
+  \global\let\MyLStransposewarning\relax
+}
+\newcommand\transdown{\MyLStransposewarning\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Downarrow$}}}
+\newcommand\transup  {\MyLStransposewarning\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Uparrow$}}}
 
 % `difficulty', `tuning' and `arrangement' are not leadsheets built-ins
 % (unlike title/band/tempo/key/capo), so each must be registered with
@@ -495,12 +509,12 @@
 \definesongproperty{difficulty}
 \definesongproperty{tuning}
 \definesongproperty{arrangement}
-% TEMPORARY (2026-06-17): registered only so legacy songs with `istransposed='
-% stop erroring on an unknown key; the value is stored but not rendered.  Revisit
-% with the transpose-label redesign (see \transup / \transdown above).
+% DEPRECATED: registered only so legacy songs with `istransposed=' stop erroring
+% on an unknown key; the value is stored but not rendered.  Kept for backward
+% compatibility, slated for removal (see \transup / \transdown above).
 \definesongproperty{istransposed}
 
-% \fixedchord{<chord>} — renders a chord name with leadsheets' symbol formatting
+% \fixedchord{<chord>} -- renders a chord name with leadsheets' symbol formatting
 % (# -> sharp symbol, b -> flat symbol, etc.) WITHOUT applying any transposition.
 %
 % Use case: the `key' song property, when you want to display the concert-pitch
@@ -522,7 +536,7 @@
 % We temporarily set both to false inside a group (expl3 \l__ variables are
 % local, so they are restored automatically when the group ends).
 %
-% WARNING — private API: these variable names are internal to leadsheets
+% WARNING -- private API: these variable names are internal to leadsheets
 % (double-underscore prefix).  If leadsheets is ever updated and renames or
 % restructures them, this macro will silently stop suppressing transposition
 % (or may cause an error).  The leadsheets package appears unmaintained as of
@@ -619,7 +633,7 @@
 % which tests clean -- but it's a song-level switch (affects lyric bodies too)
 % and changes the spacing knob from \openup\mysonglinesep to obey-lines-parskip,
 % so it's a whole-document authoring decision, not a \measures concern.  Leaving
-% explicit \\ for now (see CLAUDE.md "Future work" for the obey-lines findings).
+% explicit \\ for now.
 \newlength\minmeasure
 \setlength\minmeasure{2.0cm}
 \newcommand\measurepad{0.35em}
@@ -776,7 +790,7 @@
 % ---------------------------------------------------------------------------
 % The chords view prints a chord CHART in place of the lyric body, section by
 % section, so the two sheets stay structurally identical.  It is selected by
-% compile-songs injecting `\def\View{chords}' before \input; the
+% build-pdfs injecting `\def\View{chords}' before \input; the
 % \providecommand below makes the ordinary build's \View resolve to "full".
 % (The chords/lyrics axis is now the only magic-comment-driven view; capo and
 % transpose are separate wrapper .song files, not injected build flags.)
@@ -1104,18 +1118,18 @@
 %
 % It prints a header "Remarks", then the environment's own free-text body.  A
 % bare \begin{remarks}\end{remarks} just prints the "Remarks" header.  The block
-% reads NOTHING from the song — it is pure free text — so it has no coupling to
+% reads NOTHING from the song -- it is pure free text -- so it has no coupling to
 % the preceding song and no song-id plumbing (earlier revisions surfaced the
 % song's title/tempo/`remarks' property here, which needed a captured song id;
 % all three are gone).
 %
-% WHY OUTSIDE THE SONG ENV.  Inside \begin{song}…\end{song} leadsheets makes
+% WHY OUTSIDE THE SONG ENV.  Inside \begin{song}...\end{song} leadsheets makes
 % ^ _ | : active (chord / barline shorthands) and applies the bold "song" body
-% format — both hostile to prose.  Outside, catcodes and formatting are normal,
+% format -- both hostile to prose.  Outside, catcodes and formatting are normal,
 % so the body is ordinary text.  A songbook still gets the block:
-% \includeleadsheet rewrites the included file's \end{document}→\endinput
+% \includeleadsheet rewrites the included file's \end{document}->\endinput
 % (leadsheets.library.external.code.tex), so everything between \begin{document}
-% and \end{document} — including a post-\end{song} remarks block — is pulled in.
+% and \end{document} -- including a post-\end{song} remarks block -- is pulled in.
 %
 % POSITIONING.  The block is NOT pushed to the page bottom.  An earlier design
 % put \vfill at the top to drop it to the foot of the last page, but that made
