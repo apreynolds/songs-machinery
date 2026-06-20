@@ -364,6 +364,11 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
 - `~/.config/vim/custom/vimtex.vim` — vimtex config; sets `aux_dir` so aux/log
   files land under `~/.cache/latexmk/…`, out of the working tree (where to look
   when checking that a compile is clean)
+- `~/.config/vim/UltiSnips/song.snippets` (external — the author's vim snippets,
+  bound to `<F3>`) — `.song` authoring snippets plus, at the **top**, a curated
+  "KNOBS / adjustable parameters" cheat-sheet: a single-keypress recall list of
+  the tunable lengths/colours/views in `MyLeadsheets.sty`. Keep that cheat-sheet
+  in sync when a knob's name or default changes here.
 - **Shadowing the system leadsheets files.** This repo carries its own
   `MyLeadsheets.sty` and the PR#46-fixed `leadsheets.library.songs.code.tex`,
   which must win over the texlive copies. Two ways that happens, depending on how
