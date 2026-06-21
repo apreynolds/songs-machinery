@@ -69,6 +69,23 @@ Quick orientation for reading a `.song` (details and rationale are in
     (see `\fixedchord` in `MyLeadsheets.sty`). `capo=N` adds a `\notebox{capo N}`
     label after the key (fingering shapes, *not* a key change — see "Output
     views and arrangements").
+  - `istransposed` — a **purely cosmetic** marker that the song has been moved off
+    its written key (e.g. dropped a few semitones to sing comfortably), so it shows
+    at a glance without reaching for the original. It changes **nothing musical** —
+    unlike leadsheets' built-in `transpose=` (which moves the sounding pitch) or
+    `capo=` (fingering shapes). Prints a small TikZ arrow plus an optional amount,
+    wrapped in coloured parentheses, **between the key and the capo**:
+    `istransposed={up 3}` → `(↑3)`, `{down 2}` → `(↓2)`, `{up}` → `(↑)`. The first
+    word picks the arrow; the rest prints after it. The arrow is sized to the
+    **height of a digit in the current font** (measured per-draw, so it matches the
+    amount beside it and tracks the heading/TOC font); its baseline is its
+    bounding-box south, so the up-arrow's tail and the down-arrow's tip sit on the
+    text baseline. `\transup`/`\transdown` remain as standalone glyph macros and
+    still work as a legacy value (`istransposed={\transup 2}`). Knobs:
+    `\MyLStransposescale` (default `1` — multiplier on the measured digit height),
+    `\MyLStransposecolor` (default `BrickRed`, tints the arrow, amount, and parens).
+    Survives into a songbook TOC like the capo note (robust `\MyLStransposed`, see
+    `MyLeadsheets.sty`).
   - `genre` and `difficulty` share the **right margin**, in that order (genre as
     green text, then the difficulty glyph). All four combinations work (neither /
     genre / difficulty / both). `difficulty` takes one of three glyph macros:
