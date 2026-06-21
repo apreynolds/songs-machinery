@@ -483,25 +483,89 @@
 \newcommand\moderate {\MyLSdifficultyglyph{RoyalBlue}{(0,0.5) -- (-0.45,-0.35) -- (0.45,-0.35) -- cycle}}
 \newcommand\difficult{\MyLSdifficultyglyph{black}{(0,0.5) -- (0.4,0) -- (0,-0.5) -- (-0.4,0) -- cycle}}
 
-% DEPRECATED legacy shim: \transup / \transdown arrows, ported verbatim from the
-% reference .sty so legacy songs carrying `istransposed={\transup 2}' still
-% compile.  They are NOT wired into the header template (the `istransposed'
-% property below is merely stored, never printed) -- transpose labels are now set
-% by hand via \fixedchord in key=, so these are kept only for backward
-% compatibility and are slated for removal.  Each fires a ONE-time-per-document
-% deprecation warning when executed (same pattern as \mydot).  Caveat: the
-% value-only use inside an unrendered `istransposed' property never executes them,
-% so a song that merely stores the property stays silent -- the warning fires only
-% where \transup / \transdown are actually typeset.
-\newcommand\MyLStransposewarning{%
-  \PackageWarning{MyLeadsheets}{%
-    \protect\transup\space/ \protect\transdown\space and the `istransposed'
-    property are deprecated and will be removed; set transpose labels by hand
-    via \protect\fixedchord\space in key=}%
-  \global\let\MyLStransposewarning\relax
+% Transpose indicator -- \transup / \transdown arrow glyphs and the `istransposed'
+% property that renders them in the header.  RATIONALE: it is useful to see at a
+% glance that a song has been moved off its written key (e.g. dropped a few
+% semitones to sing it comfortably) without reaching for the original -- at a
+% campfire one usually just plays the original key.  `istransposed' is a PURELY
+% COSMETIC marker: it changes nothing musical, unlike leadsheets' built-in
+% `transpose=' (which moves the sounding pitch) or `capo=' (fingering shapes).
+% It just prints a small arrow, plus an optional amount, after the key.
+%
+% Authoring:  istransposed={up 3}  -> up-arrow + "3"
+%             istransposed={down 2}-> down-arrow + "2"
+%             istransposed={up}    -> bare up-arrow (no amount)
+% The first word selects the arrow; the rest (if any) is printed after it.
+% \transup / \transdown also remain as standalone glyph macros and still work as a
+% legacy property value (istransposed={\transup 2}) via the \str_case fallback in
+% \MyLStransposed below.
+%
+% Drawn in TikZ (already loaded via tcolorbox), matching the difficulty glyphs
+% above.  \MyLStransposecolor tints both the arrow and the amount.  The up glyph
+% is a stem + arrowhead; \transdown is the same picture flipped vertically
+% (yscale=-1).  The baseline is the bounding box's SOUTH edge -- i.e. the glyph's
+% lowest drawn point -- so it sits ON the text baseline: that point is the tail
+% for the up arrow and the (downward) tip for the down arrow, exactly the two ends
+% asked to touch the baseline.
+%
+% SIZE: the glyph fills 1.0 unit vertically (y from -0.5 to 0.5), so its height
+% equals the x/y scale length.  That length is the height of a digit in the
+% CURRENT font, measured per-draw with \settoheight -- so the arrow is exactly as
+% tall as the amount beside it and tracks the heading/TOC font automatically.
+% \MyLStransposescale is an optional fine-tune multiplier on that height (1 = exact
+% digit height) -- the only size knob; there is no fixed length to set.
+\newcommand\MyLStransposescale{1}
+\newcommand\MyLStransposecolor{BrickRed}
+\newlength\MyLStransarrowht   % scratch: measured digit height * scale, set per-draw
+\newcommand\MyLStransposearrowpic[1]{% #1 = +1 (up) or -1 (down): flip with yscale
+  \settoheight\MyLStransarrowht{8}%
+  \setlength\MyLStransarrowht{\MyLStransposescale\MyLStransarrowht}%
+  \begin{tikzpicture}[baseline={(current bounding box.south)},%
+                      x=\MyLStransarrowht,y=\MyLStransarrowht,yscale=#1]
+    \fill[\MyLStransposecolor] (-0.09,-0.5) rectangle (0.09,0.12) ;
+    \fill[\MyLStransposecolor] (-0.30,0.06) -- (0.30,0.06) -- (0,0.5) -- cycle ;
+  \end{tikzpicture}%
 }
-\newcommand\transdown{\MyLStransposewarning\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Downarrow$}}}
-\newcommand\transup  {\MyLStransposewarning\raisebox{0.1em}{\resizebox{0.5em}{!}{$\Uparrow$}}}
+% Robust (\NewDocumentCommand) so a stray \transup baked into the .toc survives
+% \edef -- see \MyLStransposed below for why that matters in a songbook.
+\NewDocumentCommand\transup  {}{\MyLStransposearrowpic{1}}
+\NewDocumentCommand\transdown{}{\MyLStransposearrowpic{-1}}
+% \MyLStransposed{<value>} -- render an `istransposed' property value.  Robust,
+% so it survives into a songbook TOC the same way \notebox{capo ...} does: the
+% title template writes \MyLStransposed{\songproperty{istransposed}} to the .toc,
+% where \edef bakes the \songproperty value in (the song context is still live)
+% but leaves \MyLStransposed for \tableofcontents to execute -- so the rich glyph
+% reaches the TOC entry, not raw text.
+\ExplSyntaxOn
+\tl_new:N \l__myls_transposed_tl
+% \MyLStransposed is robust, so it grabs \songproperty{istransposed} UNEXPANDED;
+% expand it first (\tl_set:Ne, leaving the robust \transup/\transdown tokens
+% intact) so the splitter sees the actual value's space, then append a trailing
+% space as the splitter's delimiter and hand off.
+\NewDocumentCommand\MyLStransposed { m }
+  {
+    \tl_set:Ne \l__myls_transposed_tl { #1 ~ }
+    \exp_after:wN \__myls_transposed:w \l__myls_transposed_tl \q_stop
+  }
+% Split the value on its first space: #1 = direction word, #2 = amount (possibly
+% blank).  `up'/`down' map to the arrow; anything else (a legacy \transup /
+% \transdown token) is emitted unchanged.  The amount, if present, is trimmed of
+% the delimiter's trailing space.  The whole marker is wrapped in BrickRed
+% parentheses -- one \textcolor over the lot (the arrow sets its own fill, so the
+% colour is consistent; the parens and amount inherit it).
+\cs_new_protected:Npn \__myls_transposed:w #1 ~ #2 \q_stop
+  {
+    \textcolor{\MyLStransposecolor}
+      {
+        (
+        \str_case:nnF {#1}
+          { {up} {\MyLStransposearrowpic{1}} {down} {\MyLStransposearrowpic{-1}} }
+          {#1}%
+        \tl_if_blank:nF {#2} { \, \tl_trim_spaces:n {#2} }
+        )
+      }
+  }
+\ExplSyntaxOff
 
 % `difficulty', `tuning' and `arrangement' are not leadsheets built-ins
 % (unlike title/band/tempo/key/capo), so each must be registered with
@@ -509,9 +573,10 @@
 \definesongproperty{difficulty}
 \definesongproperty{tuning}
 \definesongproperty{arrangement}
-% DEPRECATED: registered only so legacy songs with `istransposed=' stop erroring
-% on an unknown key; the value is stored but not rendered.  Kept for backward
-% compatibility, slated for removal (see \transup / \transdown above).
+% `istransposed' -- the cosmetic transpose marker (see \transup / \MyLStransposed
+% above); rendered in the title template, after the key.  Distinct from
+% leadsheets' built-in `transpose='.  Registered like the others so
+% \ifsongproperty / \songproperty work.
 \definesongproperty{istransposed}
 
 % \fixedchord{<chord>} -- renders a chord name with leadsheets' symbol formatting
@@ -1028,6 +1093,7 @@
     \large\sffamily\songproperty{title}\space\mdseries
     \ifsongproperty{band}{(\songproperty{band})}{}\normalsize\quad%
     \ifsongproperty{key}{\space\songproperty{key}}{}%
+    \ifsongproperty{istransposed}{\nobreakspace\MyLStransposed{\songproperty{istransposed}}}{}%
     \ifsongproperty{capo}{\nobreakspace\notebox{capo \songproperty{capo}}}{}%
     % genre and difficulty share the right margin, in that order.  Emit the
     % \hfill that pushes them right only when at least one is present -- a lone
