@@ -272,6 +272,41 @@ the rename (see the caveat above). We chose kernel + no-colliding-names instead.
     `\includeleadsheet` (not `\include`), so even that doesn't collide. If adopted,
     smoke-test a one-song book first, but no conflict is anticipated.
 
+**`\bookincludedir{dir}` — auto-include a whole folder (mechanism).** Goal: a book
+(e.g. `ORIGINALS.song`) that `\bookinclude`s every `dir/*.song` without a hand list.
+TeX can't enumerate a directory, so this needs shell-escape (already on). Two-stage,
+two scratch files, because of one hard constraint and one leadsheets quirk:
+- **Constraint — `\write18` can't cleanly emit `{ } \`.** Those are catcode-special
+  in the TeX source of the `\write18` argument, so the shell stage emits only *bare*
+  filenames: `ls dir/*.song | grep -v -- --input.song | sort > \jobname.songlist`.
+  That pipeline has **no** TeX-special chars (no `{ } $ # ~ % &` or literal `\` beyond
+  `\jobname`), so it survives `\write18` untouched. `grep -v -- --input.song` drops
+  the shared-body includes. `sort -t. -k1,1` keys on the path up to the `.song`
+  extension, so a base name sorts before its own arrangement wrappers: with the
+  extension out of the key, `Song` is a prefix of `Song-CAPO`, and a prefix always
+  sorts first, so `Song.song` precedes `Song-CAPO.song` (plain `sort` would put
+  `-CAPO` first, `-` < `.`).
+- **Quirk — leadsheets mis-parses a macro-delivered filename.** The obvious next step
+  (read each line and call `\bookinclude{\theline}`) **fails**: handing
+  `\includeleadsheet` a filename via an in-memory macro corrupts its `\filename@parse`
+  (observed: a `\filename@path …song/` runaway + `Paragraph ended before
+  \XKV@d@fine@k@y`, i.e. xkeyval choking, on the *first* song). A byte-identical
+  *literal* `\bookinclude{dir/Foo.song}` line read from a file via `\input` works
+  fine. So stage two reads `\jobname.songlist` (under `\endlinechar=-1`, so no
+  end-of-line space is glued onto the name) and **re-emits** it as
+  `\jobname.bookdir.tex`, a file of literal `\bookinclude{…}` lines, then `\input`s
+  that — reproducing a hand-written booklist exactly. `\MyLScharlb`/`\MyLScharrb`
+  write the braces as catcode-12 characters (built with `[ ]` as temp group
+  delimiters); `\input` re-tokenises them as real `{ }` groups.
+Because the final route is `\input` of literal `\bookinclude`s, `\MyLSaddsongdir`'s
+body-resolution fix (above) still applies per song. Both scratch files regenerate
+each compile (the book tracks the folder) and are git-ignored (`*.songlist`,
+`*.bookdir.tex`). Shell-escape off / non-pdftex engine just warns. A directory whose
+songs reference **relative graphics** (e.g. Peregrine's `\includegraphics{y-embedded-images/…}`)
+hits the *same* cwd-mismatch as the body gotcha, but for images — `\input@path`
+doesn't cover `\includegraphics`, so that would need a `\graphicspath`/`import`-style
+fix, not done here.
+
 **Composes with the presentation axis.** A wrapper may itself carry
 `%! views: chords` to get the chords/lyrics siblings of *that* key/capo —
 e.g. `Song-CAPO.song` + `%! views: chords` → `Song-CAPO.pdf` and

@@ -331,6 +331,18 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
   just before `\tableofcontents` as the jump destination; the songbook must load
   `hyperref`. Restyle via `\renewcommand\MyLStoclinktext{…}`; opt one song out of
   the link by reverting that line to plain `\clearoddpage\includeleadsheet`.
+- **`\bookincludedir{dir}` — songbook (auto-include a whole folder).** `\bookinclude`s
+  **every** `dir/*.song` in sorted order, so a "whole folder" book (e.g.
+  `ORIGINALS.song`) needs no per-song list — it tracks the directory's contents on
+  every compile. Shared-body includes (`*--input.song`) are skipped automatically;
+  wrappers (`Song-CAPO.song`) are included like any other song. **Requires
+  shell-escape** (already on via `pdflatex --shell-escape`) — TeX can't read a
+  directory itself, so a guarded `\write18` lists the folder; a missing/disabled
+  shell-escape just warns. Order is `sort -t. -k1,1` (key = path up to `.song`), so
+  a base name sorts **before** its own arrangement wrappers (`Song.song` then
+  `Song-CAPO.song`); for a different adjacency, list those songs by hand with
+  `\bookinclude` instead. Generates two git-ignored scratch
+  files (`*.songlist`, `*.bookdir.tex`); mechanism in `NOTES.md`.
 
 ## Behaviour notes & gotchas
 

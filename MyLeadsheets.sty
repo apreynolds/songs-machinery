@@ -1508,6 +1508,82 @@
   \MyLStochint
 }
 
+% --- \bookincludedir: \bookinclude every standalone song in a directory -------
+% \bookincludedir{<dir>} pulls in EVERY <dir>/*.song as a songbook entry, in
+% sorted order, so a "whole folder" book (e.g. ORIGINALS.song) need not list each
+% song by hand.  Shared-body includes (*--input.song, which have no preamble and
+% are \input by their wrappers) are skipped.  Paths are emitted as <dir>/Name.song
+% relative to the main job's directory, exactly as a hand-written \bookinclude
+% would be, so \MyLSaddsongdir's shared-body fix still applies.
+%
+% TeX cannot read a directory itself, so this needs shell-escape -- already on via
+% the project's `pdflatex --shell-escape'.  A shell pipeline lists <dir>/*.song,
+% drops the *--input.song bodies, sorts, and writes the bare filenames (one per
+% line) to \jobname.songlist in the cwd.  The pipeline is written with NO TeX-
+% special characters (no { } $ # ~ % & or literal backslash beyond \jobname) so it
+% survives \write18 without catcode contortions -- but bare filenames are all it
+% can emit, since \write18 cannot cleanly write the braces a \bookinclude call
+% needs.  So we then READ that scratch list (under \endlinechar=-1, so no end-of-
+% line space is glued onto a filename) and RE-EMIT it as \jobname.bookdir.tex, a
+% file of literal `\bookinclude{<file>}' lines, which we \input.  Going via a file
+% is deliberate: leadsheets' \includeleadsheet mis-parses a filename handed to it
+% through an in-memory macro (its \filename@parse machinery chokes), but is
+% perfectly happy with the byte-identical literal lines an \input re-tokenises --
+% exactly as if the \bookinclude calls had been hand-written (cf. a manual book).
+% \MyLScharlb / \MyLScharrb write the braces as catcode-12 characters; \input then
+% reads them back as real { } groups.
+%
+% The sort is `sort -t. -k1,1' -- key on the path up to the `.song' extension, so a
+% base name sorts before its own arrangement wrappers: with the extension out of
+% the key, `Song' is a prefix of `Song-CAPO' and a prefix always sorts first, so
+% Song.song precedes Song-CAPO.song (plain `sort' would put `-CAPO' first, since
+% `-' < `.').  Reorder by hand (a literal \bookinclude) if a different adjacency is
+% wanted.  Both scratch files are regenerated every compile (so the book always
+% tracks the folder) and are git-ignorable like the other build scratch.
+%
+% \MyLScharlb / \MyLScharrb expand to a single catcode-12 { / } (built with [ ]
+% as temporary group delimiters so the literal braces can be other-catcode).
+\begingroup
+  \catcode`\[=1 \catcode`\]=2 \catcode`\{=12 \catcode`\}=12
+  \gdef\MyLScharlb[{]%
+  \gdef\MyLScharrb[}]%
+\endgroup
+\newread\MyLSsonglistin
+\newwrite\MyLSbookout
+\newcommand\bookincludedir[1]{%
+  \ifdefined\pdfshellescape
+    \ifnum\pdfshellescape>0
+      \immediate\write18{ls #1/*.song | grep -v -- --input.song | sort -t. -k1,1 > \jobname.songlist}%
+      \openin\MyLSsonglistin=\jobname.songlist\relax
+      \ifeof\MyLSsonglistin
+        \PackageWarning{MyLeadsheets}{\string\bookincludedir: no .song files in `#1'}%
+        \closein\MyLSsonglistin
+      \else
+        \immediate\openout\MyLSbookout=\jobname.bookdir.tex\relax
+        \begingroup
+          \endlinechar=-1
+          \loop\unless\ifeof\MyLSsonglistin
+            \read\MyLSsonglistin to \MyLSsonglistline
+            \ifx\MyLSsonglistline\empty\else
+              \immediate\write\MyLSbookout{%
+                \string\bookinclude\MyLScharlb\MyLSsonglistline\MyLScharrb}%
+            \fi
+          \repeat
+        \endgroup
+        \immediate\closeout\MyLSbookout
+        \closein\MyLSsonglistin
+        \input{\jobname.bookdir.tex}%
+      \fi
+    \else
+      \PackageWarning{MyLeadsheets}{\string\bookincludedir\space needs
+        full shell-escape; list songs with \string\bookinclude\space instead}%
+    \fi
+  \else
+    \PackageWarning{MyLeadsheets}{\string\bookincludedir\space needs a
+      shell-escape engine; list songs with \string\bookinclude\space instead}%
+  \fi
+}
+
 % ---------------------------------------------------------------------------
 % Debug aid: make overfull \hbox lines visible in the PDF
 % ---------------------------------------------------------------------------
