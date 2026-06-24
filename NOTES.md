@@ -445,6 +445,53 @@ the absence of a documented bar-length API. The repeat `:` colon
 (`\leadsheets@repeatcolon`) is a separate text glyph and does **not** scale, so on
 `|:` / `:|` bars the rules grow but the dots don't (negligible at ~1.25).
 
+### Transposition spelling & `\simplifyaccidentals`
+
+leadsheets chooses a transposed chord's sharp/flat **lean** from the **transpose step
+count**, not the resulting key. `\leadsheets_transpose:nnN` (`transposing.code.tex`) sets
+the target preference to `\l__leadsheets_prefer_key_prop[steps mod 12]` (a fixed
+least-accidentals-by-key table) unless `enharmonic=sharp/flat` is set, in which case it
+uses that. Step count equals the resulting key **only when transposing from C/Am**, so
+from any other key — and especially under a capo, whose shift is the large complement
+`12 − N` (`\__leadsheets_check_capo:`) — the lean can be the wrong one for the key you
+actually land in. (Worked example: capo 1 = steps 11, `prefer_key_prop[11] = sharp`, so a
+section landing in the Db-area spells `C#/D#m/F#…` rather than the fewer-accidental
+`Db/Ebm/Gb`. The pre-change part is all-natural C major, so the mis-lean is invisible
+there — which is why only the post-key-change section of `AtTheEndOfTheDay-CAPO` looked
+off.)
+
+`enharmonic=sharp/flat` overrides the lean, but it forces the **theoretical** scale of
+that step count, which at the extremes carries double-accidentals and `Cb/Fb/B#/E#` — e.g.
+capo 1 + `enharmonic=flat` spells a C-natural as `Dbb`. That is *correct* notation for a
+key nobody would choose, hence:
+
+**`\simplifyaccidentals` (`MyLeadsheets.sty`).** An opt-in switch (`\newif\ifMyLSsimplify`,
+plus `\simplifyaccidentalsoff`) that rewrites the 14 theoretical spellings to conventional
+names — `Dbb→C, Ebb→D, Gbb→F, Abb→G, Bbb→A, Cb→B, Fb→E` and the sharp mirror
+`C##→D, D##→E, F##→G, G##→A, A##→B, B#→C, E#→F`. The 14 patterns are pairwise disjoint, so
+order is immaterial; the single-accidental rules even fix rarer extras by composition
+(`Cbb→Bb`, `B##→C#`). It is **orthogonal to `enharmonic=`** (which picks the lean); the
+usual capo pairing is `enharmonic=flat` + `\simplifyaccidentals`. Read live at each chord
+and set as a local assignment, so it is `\setleadsheets`-scoped: whole sheet (body, before
+`\begin{song}`), rest of song, or one section (reverts at `\end`); in a songbook put it in
+the **body**, not a song preamble (gobbled), like `\resize`. Do **not** switch it on when
+you deliberately want a theoretical key (C# major's `E#/B#` are correct there) — that is
+what `enharmonic=` alone is for.
+
+**Implementation — WRAP, do not replace.** `\leadsheets_chord_print:n` looks like an
+identity (`chords.code.tex:52`) but the `chords/format` key re-sets it to the brick-red
+`\chordname` formatter (accidental glyphs + quality superscripts), which MyLeadsheets does
+in its `chords/format` block. So the hook **snapshots** that formatter
+(`\cs_set_eq:NN \__myls_orig_chord_print:n …`) and, when on, cleans the raw name first
+(`\__myls_simplify:N`; the chord's `#` is catcode-other, matched with `\c_hash_str` as
+`\MyLSformattuning` does) then hands the result to the saved formatter; off, it calls the
+saved formatter unchanged (verified pixel-identical to the un-hooked `.sty`). A first
+version `\cs_set:Npn`-**replaced** chord_print and silently dropped all chord formatting
+(black, no glyphs) — caught only by eyeballing the render, not the chord *string* in the
+log, so test this code path visually. The snapshot is taken after MyLeadsheets'
+`chords/format`; a later `chords/format` re-set in a document would bypass the simplifier
+(no song does this).
+
 ### Key label under transpose — handled via `\fixedchord` (legacy note)
 
 **Not deferred — resolved by hand.** In practice the displayed key is set

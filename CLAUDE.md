@@ -258,6 +258,17 @@ at most one. Suffix convention: `--chords`/`--lyrics` (double hyphen) marks a
 hyphen) marks *different musical content*; `--input` (double hyphen) marks the
 shared body include, never compiled directly.
 
+Transposed-chord **spelling**: leadsheets picks a sharp/flat lean from the *transpose
+step count*, not the resulting key, so a capo (or a from-non-C transpose) can spell a
+section with the accidental-heavy enharmonic — e.g. capo 1 lands a Db-area section on
+`C#/D#m/F#`. Force the lean with `enharmonic=sharp/flat`; if that pushes into double
+accidentals (capo 1 + `enharmonic=flat` → `Dbb` for a C), add **`\simplifyaccidentals`**
+to collapse the theoretical spellings to conventional names (`Dbb→C`, `F##→G`, `Cb→B`,
+`E#→F`, …). It's an opt-in switch, `\setleadsheets`-scoped (whole sheet / rest-of-song /
+one section, `\simplifyaccidentalsoff` to undo), and composes with `enharmonic=` — the
+usual capo pairing is `enharmonic=flat` + `\simplifyaccidentals`. Don't use it when you
+genuinely want a theoretical key (C# major's `E#/B#`). Mechanism in `NOTES.md`.
+
 ## Fitting — `\resize`
 
 Songs aim (within reason) to fit two pages, and song parts are **atomic** — a
