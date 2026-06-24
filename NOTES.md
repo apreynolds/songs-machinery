@@ -19,10 +19,10 @@ filename; these are a record of how things were checked, not live paths.
   - chord placement: `leadsheets.library.chords.code.tex`
   - song/verse environments: `leadsheets.library.songs.code.tex`
   - music symbols (bars etc.): `leadsheets.library.musicsymbols.code.tex`
-- **PR#46 fix** lives in `~/repos/1sys/tex/songs/` and shadows the system copy via
-  `TEXINPUTS="$HOME/repos/1sys/tex//:"` (set in `~/.config/zsh/.zprofile`). When
+- **PR#46 fix** lives in `~/1sys/tex/songs-machinery/` and shadows the system copy via
+  `TEXINPUTS="$HOME/1sys/tex//:"` (set in `~/.config/zsh/.zprofile`). When
   compiling test files by hand outside that shell, export it explicitly:
-  `export TEXINPUTS="$HOME/repos/1sys/tex//:"`.
+  `export TEXINPUTS="$HOME/1sys/tex//:"`.
 - **Isolating a behaviour:** a bare `\documentclass{leadsheet}` + a single
   `\begin{verse}` (no `MyLeadsheets`) removes our own formatting as a variable.
 - **Probing expl3 internals:** patch a command with `\cs_set_protected:Npn`
@@ -121,7 +121,7 @@ commands for this reason; its near-miss report only *flags* "identical except
 
 ## Resolved
 
-- PR#46 fix for `leadsheets.library.songs.code.tex` placed in `~/repos/1sys/tex/songs/`,
+- PR#46 fix for `leadsheets.library.songs.code.tex` placed in `~/1sys/tex/songs-machinery/`,
   shadowing the unpatched system copy via `TEXINPUTS`
 - `\prop_new:c` hack removed from `MyLeadsheets.sty` (no longer needed with PR#46 fix)
 - vimtex log parsing: resolved — `aux_dir` set in `vimtex.vim`
@@ -236,7 +236,7 @@ prepends `{dir/}` to `\input@path` so the nested `\input` searches it too; the
 group scopes it per song. **Caveat — `\input@path` is consulted only after the
 bare name fails via cwd/`TEXINPUTS`, so a stale same-named body still wins if one
 is reachable.** This bit an old raw-pipe `Uberlin--input.song` copy (under
-the `~/repos/1sys/tex//` `TEXINPUTS` tree) silently shadowing a real song's
+the `~/1sys/tex//` `TEXINPUTS` tree) silently shadowing a real song's
 live `Uberlin--input.song`; the sample copy was renamed to `UberlinDemo--input.song`
 so its bare name can't collide. Moral: don't give a sample body the same
 `<RealSong>--input.song` name as a real song's body anywhere under `TEXINPUTS`.
@@ -603,7 +603,7 @@ compilations) or `~/.cache/latexmk/{parent-dir}-{jobname}/` (`build-pdfs`).
 
 ## build-pdfs — status
 
-`build-pdfs` (repo root, `~/repos/1sys/tex/songs/build-pdfs`) compiles each
+`build-pdfs` (repo root, `~/1sys/tex/songs-machinery/build-pdfs`) compiles each
 `.song` to its default PDF, then reads the `%! views:` magic comment in the
 **leading** comment block (first non-blank, non-`%` line ends the block, mirroring
 the TeX-engine magic comment) to build presentation siblings. It **skips
