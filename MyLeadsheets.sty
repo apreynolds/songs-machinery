@@ -684,10 +684,14 @@
 % E#/B# are correct there) -- that is exactly what enharmonic= alone is for.
 %
 % HOOK: leadsheets' transposition leaves the raw chord NAME in
-% \l__leadsheets_current_chord_tl and emits it through \leadsheets_chord_print:n
-% (identity by default) BEFORE accidental glyphs / quality superscripts, so the
-% substitutions run on plain letters.  The chord's `#' is catcode-other here, so
-% sharp patterns are matched with \c_hash_str, as \MyLSformattuning does above.
+% \l__leadsheets_current_chord_tl and hands it to \leadsheets_chord_print:n -- which
+% is NOT identity here: MyLeadsheets' `chords/format' (above) re-set it to the
+% brick-red \chordname formatter (accidental glyphs + quality superscripts).  So we
+% must WRAP it, not replace it: snapshot that formatter and, when the switch is on,
+% clean the raw name FIRST (its `#' is catcode-other, matched with \c_hash_str, as
+% \MyLSformattuning does) and THEN hand the simplified name to the saved formatter.
+% (The snapshot is taken here, after chords/format; a later chords/format re-set in
+% a document would bypass the simplifier -- which none of our songs do.)
 \newif\ifMyLSsimplify
 \newcommand\simplifyaccidentals{\MyLSsimplifytrue}
 \newcommand\simplifyaccidentalsoff{\MyLSsimplifyfalse}
@@ -731,23 +735,25 @@
     \tl_replace_all:NVn #1 \c__myls_simp_esh {F}
   }
 
-% Hook the chord-name printer.  Default OFF keeps the original expandable identity
-% (chords byte-identical unless the switch is set); ON simplifies a copy.  The :V
-% variant leadsheets generated still calls this base by name, so it follows along.
+% Wrap the chord-name printer.  Default OFF calls the saved formatter unchanged, so
+% chords are byte-identical unless the switch is set; ON cleans a copy of the name
+% and then calls the same formatter.  The :V variant leadsheets generated still
+% calls this base by name, so it follows along.
 \tl_new:N \l__myls_simp_tl
-\cs_new_protected:Npn \__myls_simplify_emit:n #1
+\cs_set_eq:NN \__myls_orig_chord_print:n \leadsheets_chord_print:n
+\cs_new_protected:Npn \__myls_simplify_chain:n #1
   {
     \group_begin:
       \tl_set:Nn \l__myls_simp_tl {#1}
       \__myls_simplify:N \l__myls_simp_tl
-      \tl_use:N \l__myls_simp_tl
+      \exp_args:NV \__myls_orig_chord_print:n \l__myls_simp_tl
     \group_end:
   }
-\cs_set:Npn \leadsheets_chord_print:n #1
+\cs_set_protected:Npn \leadsheets_chord_print:n #1
   {
     \legacy_if:nTF {MyLSsimplify}
-      { \__myls_simplify_emit:n {#1} }
-      { #1 }
+      { \__myls_simplify_chain:n {#1} }
+      { \__myls_orig_chord_print:n {#1} }
   }
 \ExplSyntaxOff
 
