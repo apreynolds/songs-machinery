@@ -10,8 +10,15 @@
 #   - Optionally add a line reading BOTH (or COPY) to build locally AND copy the
 #     PDFs to that directory, keeping both. Without it the build goes straight
 #     to the directory, with no local copy.
+#   - Optionally add a line reading SUBDIR to fan each song's PDFs into a
+#     per-song subdirectory of the destination, <dest>/<base>, instead of flat.
+#     <base> is the song's base filename with any -CAPO / --chords wrapper-or-
+#     view suffix stripped, so Song.song, Song-CAPO.song and the --chords/
+#     --lyrics view twins all land in <dest>/Song/. The subdirectory name must
+#     match the song's base filename; build-pdfs creates it if it doesn't exist.
+#     SUBDIR is orthogonal to BOTH (use both to keep a local copy as well).
 #   - Blank lines and #-comment lines (like these) are ignored, and the path and
-#     keyword may appear in either order.
+#     keyword(s) may appear in any order.
 #   - If the path is missing or is not a directory, build-pdfs warns and falls
 #     back to the usual local output.
 #

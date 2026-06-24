@@ -55,6 +55,19 @@
 #     BOTH
 #     ~/Dropbox/songsheets
 #
+# A line reading SUBDIR adds a second, orthogonal axis: instead of all PDFs
+# landing flat in the destination, each song's PDFs go to a per-song
+# subdirectory <dest>/<base>, where <base> is the song's base name -- the
+# jobname with any -CAPO / --chords wrapper-or-view suffix stripped (everything
+# from the first hyphen). So Song.song, Song-CAPO.song and the --chords/--lyrics
+# view twins all share one folder <dest>/Song/. The subdirectory's name must
+# therefore match the song's base filename; build-pdfs creates it if absent.
+# SUBDIR composes with BOTH (build locally AND copy into the per-song folder),
+# e.g.
+#
+#     SUBDIR
+#     ~/Documents/4music/originals
+#
 # OUTDIR is consulted per song directory, so a multi-file/multi-directory
 # invocation can ship each song's PDFs to a different place. The file is meant
 # to be git-ignored, so the destination stays a local choice. If neither file
@@ -110,17 +123,19 @@ read_views() {
 
 # Resolve an alternate output directory from an OUTDIR / .OUTDIR file in the
 # current directory (the song's own directory, since build_song cd's there).
-# The file holds a directory path (a leading ~ is expanded) plus an optional
-# mode keyword on its own line: BOTH (synonym COPY) means build locally AND copy
-# the PDFs to the destination; with no keyword the build goes straight to the
-# destination (no local copy). Blank lines and #-comment lines are ignored, and
-# the path / keyword may appear in either order. On success echoes two lines --
-# the mode (MOVE or BOTH) then the validated path; echoes nothing when the
-# caller should build locally: neither file present, no usable path, or a path
-# that is missing / not a directory (the last two warn). OUTDIR wins over
-# .OUTDIR if both exist.
+# The file holds a directory path (a leading ~ is expanded) plus optional
+# keywords on their own lines: BOTH (synonym COPY) means build locally AND copy
+# the PDFs to the destination (with no keyword the build goes straight to the
+# destination, no local copy); SUBDIR means fan each song's PDFs into a per-song
+# subdirectory of the destination rather than flat (the subdir name is resolved
+# by build_song, which knows the jobname). Blank lines and #-comment lines are
+# ignored, and the path / keywords may appear in any order. On success echoes
+# three lines -- the mode (MOVE or BOTH), the layout (FLAT or SUBDIR), then the
+# validated destination path; echoes nothing when the caller should build
+# locally: neither file present, no usable path, or a path that is missing / not
+# a directory (the last two warn). OUTDIR wins over .OUTDIR if both exist.
 read_outdir() {
-  local f line trimmed lower path="" mode="MOVE"
+  local f line trimmed lower path="" mode="MOVE" layout="FLAT"
   for f in OUTDIR .OUTDIR; do
     [[ -f $f ]] && break
   done
@@ -134,6 +149,7 @@ read_outdir() {
     lower=${trimmed,,}
     case $lower in
       both | copy) mode="BOTH"; continue ;;   # keep a local copy too
+      subdir) layout="SUBDIR"; continue ;;    # per-song subdir at destination
     esac
     [[ -z $path ]] && path=$trimmed           # first non-keyword line = path
   done <"$f"
@@ -147,7 +163,7 @@ read_outdir() {
     echo "build-pdfs: $f path '$path' is not a directory, building locally" >&2
     return 0
   fi
-  printf '%s\n%s\n' "$mode" "$path"
+  printf '%s\n%s\n%s\n' "$mode" "$layout" "$path"
 }
 
 # Build a presentation view (chords, lyrics, debug, phone, or any `-gray'
@@ -173,7 +189,7 @@ compile_view() {
 # Runs in a subshell so the cd (and the aux-dir scheme that depends on cwd)
 # stays local to this build. Returns non-zero if the default compile fails.
 build_song() {
-  local song=$1 dir base jobname auxdir view varaux outinfo outdir outmode movedir
+  local song=$1 dir base jobname auxdir view varaux outinfo outdir outmode outlayout movedir
   dir=$(dirname -- "$song")
   base=$(basename -- "$song")
   jobname=${base%.song}
@@ -191,15 +207,24 @@ build_song() {
     mkdir -p "$auxdir" || exit
 
     # Output directory: an OUTDIR/.OUTDIR file here can redirect PDFs elsewhere
-    # (see header). read_outdir echoes two lines (mode, path) or nothing.
-    # MOVE (default): latexmk's -outdir writes the PDF straight to the
+    # (see header). read_outdir echoes three lines (mode, layout, path) or
+    # nothing. MOVE (default): latexmk's -outdir writes the PDF straight to the
     # destination. BOTH: build locally as usual (out-dir defaults to cwd), then
     # copy each PDF to the destination. movedir carries the -outdir path for the
     # MOVE case only, so the BOTH case keeps its local build.
-    outdir=""; outmode=""; movedir=""
+    outdir=""; outmode=""; outlayout=""; movedir=""
     if outinfo=$(read_outdir) && [[ -n $outinfo ]]; then
-      outmode=${outinfo%%$'\n'*}
-      outdir=${outinfo#*$'\n'}
+      { read -r outmode; read -r outlayout; read -r outdir; } <<<"$outinfo"
+      # SUBDIR layout: fan this song's PDFs into a per-song subdirectory
+      # <dest>/<base>, where <base> is the jobname with any -CAPO/--chords
+      # wrapper-or-view suffix stripped (everything from the first hyphen), so a
+      # song and all its arrangement/view siblings share one folder. Resolving
+      # outdir to the subdir here means the MOVE -outdir and the BOTH cp targets
+      # below both follow automatically. Created if absent.
+      if [[ $outlayout == SUBDIR ]]; then
+        outdir="$outdir/${jobname%%-*}"
+        mkdir -p "$outdir" || exit
+      fi
       if [[ $outmode == BOTH ]]; then
         echo "    -> outdir: $outdir (local copy kept)"
       else
