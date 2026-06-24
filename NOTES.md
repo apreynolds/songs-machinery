@@ -278,7 +278,8 @@ TeX can't enumerate a directory, so this needs shell-escape (already on). Two-st
 two scratch files, because of one hard constraint and one leadsheets quirk:
 - **Constraint — `\write18` can't cleanly emit `{ } \`.** Those are catcode-special
   in the TeX source of the `\write18` argument, so the shell stage emits only *bare*
-  filenames: `ls dir/*.song | grep -v -- --input.song | sort > \jobname.songlist`.
+  filenames: `ls dir/*.song | grep -v -- --input.song | sort -t. -k1,1 > .\jobname.songlist`
+  (the leading dot keeps that scratch file hidden in the song directory).
   That pipeline has **no** TeX-special chars (no `{ } $ # ~ % &` or literal `\` beyond
   `\jobname`), so it survives `\write18` untouched. `grep -v -- --input.song` drops
   the shared-body includes. `sort -t. -k1,1` keys on the path up to the `.song`
@@ -292,7 +293,7 @@ two scratch files, because of one hard constraint and one leadsheets quirk:
   (observed: a `\filename@path …song/` runaway + `Paragraph ended before
   \XKV@d@fine@k@y`, i.e. xkeyval choking, on the *first* song). A byte-identical
   *literal* `\bookinclude{dir/Foo.song}` line read from a file via `\input` works
-  fine. So stage two reads `\jobname.songlist` (under `\endlinechar=-1`, so no
+  fine. So stage two reads `.\jobname.songlist` (under `\endlinechar=-1`, so no
   end-of-line space is glued onto the name) and **re-emits** it as
   `\jobname.bookdir.tex`, a file of literal `\bookinclude{…}` lines, then `\input`s
   that — reproducing a hand-written booklist exactly. `\MyLScharlb`/`\MyLScharrb`

@@ -1519,7 +1519,8 @@
 % TeX cannot read a directory itself, so this needs shell-escape -- already on via
 % the project's `pdflatex --shell-escape'.  A shell pipeline lists <dir>/*.song,
 % drops the *--input.song bodies, sorts, and writes the bare filenames (one per
-% line) to \jobname.songlist in the cwd.  The pipeline is written with NO TeX-
+% line) to .\jobname.songlist in the cwd (a leading dot keeps this scratch file
+% hidden in the song directory).  The pipeline is written with NO TeX-
 % special characters (no { } $ # ~ % & or literal backslash beyond \jobname) so it
 % survives \write18 without catcode contortions -- but bare filenames are all it
 % can emit, since \write18 cannot cleanly write the braces a \bookinclude call
@@ -1553,8 +1554,8 @@
 \newcommand\bookincludedir[1]{%
   \ifdefined\pdfshellescape
     \ifnum\pdfshellescape>0
-      \immediate\write18{ls #1/*.song | grep -v -- --input.song | sort -t. -k1,1 > \jobname.songlist}%
-      \openin\MyLSsonglistin=\jobname.songlist\relax
+      \immediate\write18{ls #1/*.song | grep -v -- --input.song | sort -t. -k1,1 > .\jobname.songlist}%
+      \openin\MyLSsonglistin=.\jobname.songlist\relax
       \ifeof\MyLSsonglistin
         \PackageWarning{MyLeadsheets}{\string\bookincludedir: no .song files in `#1'}%
         \closein\MyLSsonglistin
