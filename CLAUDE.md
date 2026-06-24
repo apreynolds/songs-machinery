@@ -58,8 +58,9 @@ Quick orientation for reading a `.song` (details and rationale are in
   formatting), **except** the tuning line, which is deliberately kept off the TOC,
   the PDF bookmark, and the running head. There is **no `tempo`** in the header
   (dropped in the redesign). Properties:
-  - `title`, `band` — leadsheets built-ins. `key` prints **raw** (concert pitch,
-    never transposed); wrap an accidental key in `\fixedchord{…}` so the sharp/flat
+  - `title`, `band` — leadsheets built-ins. `key` prints **raw** (never
+    transposed — set it to the key the sheet should show, not necessarily concert);
+    wrap an accidental key in `\fixedchord{…}` so the sharp/flat
     glyph renders, e.g. `key={\fixedchord{Gm}}`. **Write accidentals as `\sharp` /
     `\flat`, never a literal `#`** — e.g. `key={\fixedchord{F\sharp m}}`,
     `key={\fixedchord{B\flat}}`. A raw `#` compiles standalone but breaks in a
@@ -229,12 +230,17 @@ Mechanism internals and rationale are in `NOTES.md`.
   **no preamble**, not `\begin{song}` — into `Song--input.song`, then write thin
   wrapper files that each set their own `\begin{song}[…]{…}` options and
   `\input{Song--input.song}`:
-  - **Concert vs capo.** Transcribe in concert pitch; every wrapper sets `key=`
-    (concert — required, or leadsheets warns per chord). `Song.song` omits `capo`
-    → concert sheet; `Song-CAPO.song` carries `capo=N` → capo shapes plus a "capo
-    N" note. The key label stays concert pitch in both (the note keys off
-    `\ifsongproperty{capo}`). **Never put both `capo=N` and `transpose=M` in one
-    wrapper** — they combine and corrupt that sheet.
+  - **Concert vs capo.** `transpose-capo` (global default **true**) sets the input
+    convention, per wrapper — anchor on **either** pitch. *Concert-centric:* write
+    concert pitch, `Song.song` omits `capo` → concert sheet, `Song-CAPO.song` adds
+    `capo=N` → leadsheets derives the down-N capo shapes plus a "capo N" note.
+    *Capo-centric:* write the capo shapes directly with `capo=N` + `transpose-capo=false`
+    (in the **body**, so a songbook doesn't gobble it), and make the concert sibling
+    by dropping `capo` and adding `transpose=N`. Set `key=` to match the chords each
+    sheet shows (it prints raw, never follows a transpose) — required whenever
+    something transposes, optional on a no-transpose capo-centric sheet. **Never put
+    both `capo=N` and `transpose=M` in one wrapper** — they combine and corrupt that
+    sheet.
   - **Key change (transpose).** A *real* key change (the sounding pitch moves,
     unlike capo): the wrapper carries `transpose=N` — now a **plain literal**
     (the old `\SongTranspose` macro indirection is gone, since nothing has to undo
@@ -251,8 +257,9 @@ Mechanism internals and rationale are in `NOTES.md`.
 The two mechanisms **compose**: a wrapper (one arrangement) may itself carry
 `%! views: chords` to get the chords/lyrics views of that particular key/capo.
 
-Capo vs transpose: capo changes the fingering shapes only (label stays concert);
-transpose changes the sounding key (label should follow). A single wrapper uses
+Capo vs transpose: capo changes the fingering shapes only (label stays concert
+under the default `transpose-capo=true`; capo-centric input shows the shape key);
+transpose changes the sounding key (set the label to follow). A single wrapper uses
 at most one. Suffix convention: `--chords`/`--lyrics` (double hyphen) marks a
 *different presentation* of the same content; `-CAPO`/`-OriginalKey` (single
 hyphen) marks *different musical content*; `--input` (double hyphen) marks the

@@ -162,16 +162,25 @@ which the single-source approach couldn't do.
 globally, in `MyLeadsheets.sty`. With a `capo=N` property present, leadsheets
 transposes every chord by `12 − N` semitones = **down N** (mod octave) — exactly
 the shapes fretted with the capo on (`\__leadsheets_check_capo:`,
-`songs.code.tex`). Chords transpose only when a `key` property also exists, so
-**every wrapper must set `key=`** (concert pitch) or leadsheets warns per chord. A
+`songs.code.tex`). That is the **default** path: concert-pitch input in, capo shapes out. Set
+`transpose-capo=false` instead and `capo=N` transposes nothing — it is just the
+"capo N" label — so you write the **capo-relative shapes directly** (capo-centric).
+The choice is per wrapper; put `transpose-capo` in the wrapper **body**, not its
+preamble, so a songbook's preamble-gobble doesn't drop it (like `\resize`). Chords
+transpose — and a `key` property is then **required**, else leadsheets warns per
+chord — only when something actually transposes (`transpose=`, or `transpose-capo`
+with a `capo=`); a capo-centric wrapper (no transpose) leaves `key=` optional,
+though you still set it for the displayed label. A
 wrapper with no `capo` is unaffected: capo absent / `capo=0` is a full-octave
 transpose = identity (verified — no enharmonic drift). The title template adds the
 "capo N" note via `\ifsongproperty{capo}{… \notebox{capo \songproperty{capo}} …}{}`,
 so the concert wrapper (no `capo`) simply has no note — no flag plumbing. The
-displayed `key=` stays concert pitch because the template prints
-`\songproperty{key}` *raw*, never through the chord transposer (the stock template
-*would* transpose it). `\fixedchord`, for a ♯/♭ glyph in a key like `F#m`, is still
-unported.
+displayed key is whatever `key=` says — set it to match the chords the sheet shows
+(the shape key on a capo-centric capo sheet; the concert key on its `transpose=`
+concert sibling, which it will **not** follow automatically) — because the template
+prints `\songproperty{key}` *raw*, never through the chord transposer (the stock
+template *would* transpose it). `\fixedchord`, for a ♯/♭ glyph in a key like `F#m`, is now ported
+and live (`MyLeadsheets.sty`).
 
 **Transpose — also pure leadsheets.** A wrapper carrying `transpose=N` (a plain
 literal now) shifts the sounding pitch by N semitones; the original-key sibling is
