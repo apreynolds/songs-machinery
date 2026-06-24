@@ -658,6 +658,100 @@
 \ExplSyntaxOff
 
 % ---------------------------------------------------------------------------
+% \simplifyaccidentals -- collapse theoretical spellings to conventional names
+% ---------------------------------------------------------------------------
+% leadsheets spells a transposed chord as a degree of the *target key's* scale,
+% and it picks that scale from the transpose STEP COUNT (or a forced enharmonic=),
+% not from the resulting key.  At the extremes -- a large capo shift (capo=N is a
+% 12-N semitone transpose), or enharmonic= pushed against the grain -- the scale
+% is a theoretical key (Cb major, D# major, ...) carrying double-flats/sharps and
+% Cb/Fb/B#/E#, so e.g. a capo-1 sheet forced enharmonic=flat spells a C-natural as
+% `Dbb'.  A player wants the conventional name for the pitch: Dbb->C, F##->G,
+% Cb->B, E#->F, ...  This switch rewrites those.
+%
+% OPT-IN, and \setleadsheets-like in placement: \simplifyaccidentals flips a flag
+% read live at each chord print, set as a local assignment, so it applies from its
+% point to the end of the enclosing TeX group and reverts after -- whole sheet
+% (body, before \begin{song}), rest of song, or one section (inside it).
+% \simplifyaccidentalsoff turns it off within a region.  In a songbook put it in
+% the BODY, not a song preamble (gobbled), exactly like \resize/\ForceEvenPages.
+% Orthogonal to enharmonic= (which chooses the sharp/flat lean); this only cleans
+% whatever spelling results, so the two compose -- the usual pairing for a capo
+% sheet is enharmonic=flat + \simplifyaccidentals.
+%
+% CAVEAT: it collapses E#/B# and the double accidentals unconditionally, so do NOT
+% switch it on when you deliberately want a theoretical key spelling (C# major's
+% E#/B# are correct there) -- that is exactly what enharmonic= alone is for.
+%
+% HOOK: leadsheets' transposition leaves the raw chord NAME in
+% \l__leadsheets_current_chord_tl and emits it through \leadsheets_chord_print:n
+% (identity by default) BEFORE accidental glyphs / quality superscripts, so the
+% substitutions run on plain letters.  The chord's `#' is catcode-other here, so
+% sharp patterns are matched with \c_hash_str, as \MyLSformattuning does above.
+\newif\ifMyLSsimplify
+\newcommand\simplifyaccidentals{\MyLSsimplifytrue}
+\newcommand\simplifyaccidentalsoff{\MyLSsimplifyfalse}
+
+\ExplSyntaxOn
+\cs_generate_variant:Nn \tl_replace_all:Nnn { NVn }
+
+% Sharp-side search patterns carry a catcode-other `#', so build them under that
+% catcode -- a literal `##' in normal source is one parameter token, which would
+% not match the chord string's two other-`#' tokens.
+\group_begin:
+  \char_set_catcode_other:N \#
+  \tl_const:Nn \c__myls_simp_css {C##}
+  \tl_const:Nn \c__myls_simp_dss {D##}
+  \tl_const:Nn \c__myls_simp_fss {F##}
+  \tl_const:Nn \c__myls_simp_gss {G##}
+  \tl_const:Nn \c__myls_simp_ass {A##}
+  \tl_const:Nn \c__myls_simp_bsh {B#}
+  \tl_const:Nn \c__myls_simp_esh {E#}
+\group_end:
+
+% Rewrite the messy spellings in chord-name tl #1 to their conventional names.
+% The 14 patterns are pairwise disjoint, so order is immaterial; the single-
+% accidental rules even fix the rarer extra-accidental cases by composition
+% (Cbb->Bb, B##->C#, ...).
+\cs_new_protected:Npn \__myls_simplify:N #1
+  {
+    \tl_replace_all:Nnn #1 {Dbb} {C}
+    \tl_replace_all:Nnn #1 {Ebb} {D}
+    \tl_replace_all:Nnn #1 {Gbb} {F}
+    \tl_replace_all:Nnn #1 {Abb} {G}
+    \tl_replace_all:Nnn #1 {Bbb} {A}
+    \tl_replace_all:Nnn #1 {Cb}  {B}
+    \tl_replace_all:Nnn #1 {Fb}  {E}
+    \tl_replace_all:NVn #1 \c__myls_simp_css {D}
+    \tl_replace_all:NVn #1 \c__myls_simp_dss {E}
+    \tl_replace_all:NVn #1 \c__myls_simp_fss {G}
+    \tl_replace_all:NVn #1 \c__myls_simp_gss {A}
+    \tl_replace_all:NVn #1 \c__myls_simp_ass {B}
+    \tl_replace_all:NVn #1 \c__myls_simp_bsh {C}
+    \tl_replace_all:NVn #1 \c__myls_simp_esh {F}
+  }
+
+% Hook the chord-name printer.  Default OFF keeps the original expandable identity
+% (chords byte-identical unless the switch is set); ON simplifies a copy.  The :V
+% variant leadsheets generated still calls this base by name, so it follows along.
+\tl_new:N \l__myls_simp_tl
+\cs_new_protected:Npn \__myls_simplify_emit:n #1
+  {
+    \group_begin:
+      \tl_set:Nn \l__myls_simp_tl {#1}
+      \__myls_simplify:N \l__myls_simp_tl
+      \tl_use:N \l__myls_simp_tl
+    \group_end:
+  }
+\cs_set:Npn \leadsheets_chord_print:n #1
+  {
+    \legacy_if:nTF {MyLSsimplify}
+      { \__myls_simplify_emit:n {#1} }
+      { #1 }
+  }
+\ExplSyntaxOff
+
+% ---------------------------------------------------------------------------
 % Measures: minimum bar spacing
 % ---------------------------------------------------------------------------
 % leadsheets' bar "|" is just an inline rule; the span between two bars has no
