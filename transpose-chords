@@ -1,0 +1,105 @@
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
+# transpose-chords — transpose leadsheets ^{}/_{} chord roots by N semitones
+# Usage: transpose-chords STEP [--sharp | --flat]
+#   STEP        signed integer semitones, e.g. +2, 2 or -1 (the leading + is optional)
+#   --sharp     spell black-key results as sharps  (C#, D#, F#, G#, A#)
+#   --flat      spell black-key results as flats   (Db, Eb, Gb, Ab, Bb)  [default]
+#
+# Reads .song text on stdin, writes the transposed text on stdout — designed as a
+# vim range filter (:'<,'>!transpose-chords +1). ONLY the contents of ^{...} and
+# _{...} chord tokens are rewritten; lyrics (which in this corpus are ALL-CAPS and
+# full of bare A–G letters), macros, barlines and braces are left untouched. Within
+# a token, only the chord ROOT (and each side of a slash chord, e.g. Db/F) moves —
+# a leading decoration such as `<`, the quality/extension suffix (m7, maj7, b9, …)
+# and the slash itself are carried through verbatim.
+#
+# Default spelling is FLAT, matching this corpus's habit (Db, Eb, Gb, Ab, Bb); pass
+# --sharp to flip. (leadsheets' own transposer instead picks per-pitch from a mixed
+# table, so it would render pitch 6 as F# where this song writes Gb; a single,
+# predictable flat default is easier to reason about when editing source by hand.)
+
+import argparse
+import re
+import sys
+
+# Natural note name -> semitone index within the octave (pitch class, 0–11).
+NOTE_SEMITONE = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+
+# Pitch class -> spelled name, one table per accidental policy. Naturals are
+# identical in both; only the five black keys differ.
+SHARP_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+FLAT_NAMES  = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
+
+# One chord token's content (the text between the braces of ^{...} / _{...}), split
+# into: (1) leading decoration — anything that is neither a note letter nor a
+# backslash, e.g. `<`; (2) the root letter A–G; (3) a run of accidentals # / b;
+# (4) everything after the root (the suffix: m, 7, maj7, b9, …). If a part has no
+# A–G root after its decoration — a bare `\beatdot`, say — the regex fails to match
+# and the part is returned untouched.
+PART_RE = re.compile(r"^([^A-G\\]*)([A-G])([#b]*)(.*)$", re.DOTALL)
+
+# A chord token in the song body: a ^ or _ shorthand immediately followed by a
+# braced group with no nested braces (chord tokens never nest). The lyric word that
+# may follow a ^{chord} sits OUTSIDE these braces, so it is never captured here.
+TOKEN_RE = re.compile(r"([\^_])\{([^{}]*)\}")
+
+
+def transpose_part(part: str, step: int, names: list[str]) -> str:
+    """Transpose one chord (or one side of a slash chord) by `step` semitones."""
+    m = PART_RE.match(part)
+    if not m:
+        return part  # no note root here (e.g. \beatdot) — leave it alone
+    decoration, letter, accidentals, suffix = m.groups()
+    # accidentals is a run like '', 'b', '#', 'bb' — each # is +1, each b is -1.
+    offset = accidentals.count("#") - accidentals.count("b")
+    pitch = (NOTE_SEMITONE[letter] + offset) % 12
+    new_pitch = (pitch + step) % 12
+    return decoration + names[new_pitch] + suffix
+
+
+def transpose_token_content(content: str, step: int, names: list[str]) -> str:
+    """Transpose every `/`-separated part of one ^{...}/_{...} token's content."""
+    return "/".join(transpose_part(p, step, names) for p in content.split("/"))
+
+
+def transpose_text(text: str, step: int, names: list[str]) -> str:
+    """Rewrite only the chord tokens in `text`, leaving all other characters as-is."""
+    return TOKEN_RE.sub(
+        lambda m: f"{m.group(1)}{{{transpose_token_content(m.group(2), step, names)}}}",
+        text,
+    )
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Transpose leadsheets ^{}/_{} chord roots by N semitones.",
+    )
+    parser.add_argument(
+        "step",
+        help="signed semitones to transpose, e.g. +2, 2 or -1",
+    )
+    spelling = parser.add_mutually_exclusive_group()
+    spelling.add_argument(
+        "--sharp", action="store_true", help="spell black keys as sharps",
+    )
+    spelling.add_argument(
+        "--flat", action="store_true", help="spell black keys as flats (default)",
+    )
+    args = parser.parse_args()
+
+    try:
+        step = int(args.step)  # int() accepts '+2', '2' and '-1'
+    except ValueError:
+        parser.error(f"STEP must be a signed integer, got {args.step!r}")
+
+    names = SHARP_NAMES if args.sharp else FLAT_NAMES
+    sys.stdout.write(transpose_text(sys.stdin.read(), step, names))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

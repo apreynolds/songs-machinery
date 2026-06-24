@@ -185,6 +185,40 @@ combines with it (`net = M − N`) and corrupts that sheet. If a baseline transp
 is ever needed alongside a capo, bake it into the authored chords. Wrappers make
 this easy to keep straight: each carries one or the other.
 
+**Corollary — a mid-song `\setleadsheets{transpose=M}` in a shared body fights a
+capo wrapper (the same root cause).** Capo and `transpose=` share *one* variable,
+`\l__leadsheets_transpose_steps_int` — the single semitone shift applied to every
+chord. `transpose=M` (`transposing.code.tex:222–224`) does an **absolute set** of
+that int to `M` (no addition); the capo's contribution is folded into the *same*
+int **once**, at song start, by `\__leadsheets_check_capo:` (`songs.code.tex:490–505`:
+`steps = (transpose_bool ? steps : 12) − capo`). So a mid-song `transpose=M` simply
+**overwrites** whatever `check_capo` computed, and `check_capo` never re-runs. In a
+no-capo wrapper that overwrites `12` (≡ identity) with `M` — correct, an honest
+mid-song key change. In a `capo=N` wrapper it overwrites `12 − N` (the capo offset)
+with `M`, discarding the capo **entirely**: post-change net shift `= M`, not the
+`M − N` you want, i.e. a full **capo's-worth (N semitones) too high**. (Note this is
+*worse* than the both-in-one-wrapper case above, where the subtraction still happens
+because both are set before `check_capo` runs.)
+
+*Worked example — `AtTheEndOfTheDay{,-CAPO}.song`* share `…--input.song`, which does
+`\setleadsheets{transpose=1, enharmonic=sharp}` mid-song for the late key change.
+Concert (`capo` absent): pre-change Db, post-change D ✓. CAPO (`capo=1`): pre-change
+C ✓ (capo working, `12−1`), but post-change the `transpose=1` overwrites the `11` to
+`1`, so Db→**D** when the right capo shape is Db (net should be `1−1=0`). Confirmed by
+source trace; matches the rendered PDF. **Nothing is broken** — it is the inherent
+shape of one once-computed transpose int plus `transpose=` being an absolute set.
+
+*If a shared mid-song key change must coexist with a capo wrapper*, the post-change
+shift has to be `M − capo` per wrapper. Two routes, neither wired up here: (a) **public
+API** — parameterise the directive, `\setleadsheets{transpose=\MidKeyChange,
+enharmonic=sharp}` in the shared body, each wrapper `\newcommand`ing it (concert `1`,
+CAPO `0`); l3keys expands the macro value (`transpose=\macro` works, per *Transpose*
+above). (b) **re-run `\__leadsheets_check_capo:`** immediately after the transpose in
+the shared body — it recomputes `M − capo` for *each* wrapper automatically (concert
+`1−0`, CAPO `1−1`), fixing both from one line, but it reaches a `\__` private, so it
+is a last resort against the "avoid leadsheets internals" goal. The cleaner habit, if
+the key change is the point, is to treat post-change as its own arrangement axis.
+
 **Filename gotcha.** The shared body must use `--`, not `__`: inside `song`,
 leadsheets makes `_` an active character (the `_{C}` chord token), so an
 `\input`-ed filename containing `_` is mangled. See the "`\input` filenames inside
