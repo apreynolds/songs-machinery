@@ -1516,6 +1516,20 @@
 % relative to the main job's directory, exactly as a hand-written \bookinclude
 % would be, so \MyLSaddsongdir's shared-body fix still applies.
 %
+% \bookincludedir[<ere>]{<dir>} takes an OPTIONAL POSIX extended regexp and
+% includes only the <dir>/*.song files whose CONTENTS match it (the lister becomes
+% `grep -lE '<ere>' <dir>/*.song' instead of `ls <dir>/*.song'; the --input.song
+% drop, sort, and write loop are identical).  This is how one folder feeds several
+% filtered songbooks: tag each song with a magic comment in its leading block, e.g.
+% `%! covers: favorite, campfire', and select on it -- COVERS-ALL.song uses
+% [! covers:.*(favorite|campfire)], COVERS-CAMPFIRE.song uses [! covers:.*campfire].
+% The <ere> goes UNQUOTED through \write18, so keep it to TeX catcode-12 characters
+% only: the patterns above use ! : . * ( ) | and spaces (all `other'), and anchor on
+% `! covers:' rather than `%! covers:' precisely to avoid a literal % (a comment
+% char) -- the same catcode discipline the \write18 string below relies on.  The
+% .sty stays domain-agnostic: the tag word (`covers') and flags live in the song
+% files and the songbook's pattern, not here.
+%
 % TeX cannot read a directory itself, so this needs shell-escape -- already on via
 % the project's `pdflatex --shell-escape'.  A shell pipeline lists <dir>/*.song,
 % drops the *--input.song bodies, sorts, and writes the bare filenames (one per
@@ -1551,10 +1565,15 @@
 \endgroup
 \newread\MyLSsonglistin
 \newwrite\MyLSbookout
-\newcommand\bookincludedir[1]{%
+\newcommand\bookincludedir[2][]{%
   \ifdefined\pdfshellescape
     \ifnum\pdfshellescape>0
-      \immediate\write18{ls #1/*.song | grep -v -- --input.song | sort -t. -k1,1 > .\jobname.songlist}%
+      \def\MyLSbookdirpat{#1}%
+      \ifx\MyLSbookdirpat\empty
+        \immediate\write18{ls #2/*.song | grep -v -- --input.song | sort -t. -k1,1 > .\jobname.songlist}%
+      \else
+        \immediate\write18{grep -lE '#1' #2/*.song | grep -v -- --input.song | sort -t. -k1,1 > .\jobname.songlist}%
+      \fi
       \openin\MyLSsonglistin=.\jobname.songlist\relax
       \ifeof\MyLSsonglistin
         \PackageWarning{MyLeadsheets}{\string\bookincludedir: no .song files in `#1'}%
