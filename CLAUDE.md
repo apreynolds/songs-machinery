@@ -343,6 +343,21 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
   `Song-CAPO.song`); for a different adjacency, list those songs by hand with
   `\bookinclude` instead. Generates two git-ignored scratch
   files (`*.songlist`, `*.bookdir.tex`); mechanism in `NOTES.md`.
+  - **Optional content filter — `\bookincludedir[<ere>]{dir}`.** With an optional
+    POSIX extended regexp, the lister becomes `grep -lE '<ere>' dir/*.song` instead
+    of `ls dir/*.song`, so only songs whose **contents** match are included (the
+    `*--input.song` drop, sort, and write loop are unchanged). This is how one
+    folder feeds several **filtered** songbooks off a per-song magic comment: tag
+    each song in its leading block, e.g. `%! covers: favorite, campfire`, then
+    select on it — the covers book uses `[! covers:.*(favorite|campfire)]`
+    (everything tagged favorite *or* campfire) and the campfire book uses
+    `[! covers:.*campfire]`. Keep the `<ere>` to TeX catcode-12 characters only (it
+    goes **unquoted** through `\write18`): `! : . * ( ) |` and spaces are all safe,
+    and anchoring on `! covers:` rather than `%! covers:` deliberately avoids a
+    literal `%`. The `.sty` stays domain-agnostic — the tag word and flags live in
+    the song files and the songbook's pattern, never in `MyLeadsheets.sty`. The
+    magic comment sits in the leading block before `\documentclass`, alongside any
+    `%! views:` line (build-pdfs ignores it; it only reads `%! views:`).
 
 ## Behaviour notes & gotchas
 
