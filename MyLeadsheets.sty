@@ -1204,7 +1204,7 @@
     % \tableofcontents time -- when the current-song context is gone -- giving the
     % wrong answer in the TOC.
     \ifsongproperty{genre}{%
-      \hfill\textcolor{ForestGreen}{\songproperty{genre}}%
+      \hfill\songproperty{genre}%
       \ifsongproperty{difficulty}{\space\songproperty{difficulty}}{}%
     }{%
       \ifsongproperty{difficulty}{\hfill\songproperty{difficulty}}{}%

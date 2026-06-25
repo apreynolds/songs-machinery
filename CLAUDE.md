@@ -88,7 +88,7 @@ Quick orientation for reading a `.song` (details and rationale are in
     Survives into a songbook TOC like the capo note (robust `\MyLStransposed`, see
     `MyLeadsheets.sty`).
   - `genre` and `difficulty` share the **right margin**, in that order (genre as
-    green text, then the difficulty glyph). All four combinations work (neither /
+    plain black text, then the difficulty glyph). All four combinations work (neither /
     genre / difficulty / both). `difficulty` takes one of three glyph macros:
     `{\easy}` (green ●), `{\moderate}` (blue ▲), `{\difficult}` (black ◆).
   - `arrangement` — a short monospace tag (`arrangement={pno.}`, `{gtr.}`, `{cp.}`)
