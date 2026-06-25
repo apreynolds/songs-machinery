@@ -1187,10 +1187,38 @@
 % pulled up toward the heading (applied as negative space above the line).
 \newcommand\MyLStuningfont{\small}
 \newcommand\MyLStuningraise{0.5\baselineskip}
+% Favourite-song emphasis (INVERTED: favourites are the BLACK ones).  In a songbook,
+% \bookinclude scans each included file's leading `%! covers:' magic comment (see
+% \MyLSdetectfavorite) and sets \ifMyLSfavorite when the song is tagged `favorite'.
+% A favourite keeps the normal black heading ink; EVERY OTHER song in the book has
+% its heading muted to grey, so the favourites are the ones that stand out.  The
+% grey is set as the heading's BASE colour, so it covers all normally-black heading
+% text (title, band, genre) while the independently coloured bits (red key, blue
+% arrangement tag, the difficulty glyph) keep their own colour.  Both the on-page
+% heading and the reused TOC entry follow.  \ifMyLSbookheading gates the muting to a
+% songbook: detection only runs from \bookinclude, so a STANDALONE sheet leaves it
+% false and its heading stays plain black (never greyed).  Knob: \MyLSnonfavoritecolor
+% (default grey `MyLSnonfavoritegray', gray 0.5 -- not so light it is hard to read,
+% dark enough that black favourites pop; \renewcommand to retune).  Under the
+% grayscale views' monochrome xcolor it degrades like every other colour.
+\newif\ifMyLSfavorite
+\newif\ifMyLSbookheading
+\definecolor{MyLSnonfavoritegray}{gray}{0.5}
+\newcommand\MyLSnonfavoritecolor{MyLSnonfavoritegray}
 \definesongtitletemplate{mytitle}{%
   \section{\texorpdfstring{%
     \ifsongproperty{arrangement}{\MyLSarrangementslot{\songproperty{arrangement}}}{}%
-    \large\sffamily\songproperty{title}\space\mdseries
+    \large\sffamily
+    % Heading emphasis (set per-song by \bookinclude): in a songbook, mute every
+    % NON-favourite heading to grey so favourites read as the black ones.  Set once
+    % here as the base colour for the normally-black heading text that follows
+    % (title, band, genre); the independently coloured bits below (key, arrangement,
+    % difficulty glyph) override locally.  Both \if tests are expandable, so -- like
+    % the \ifsongproperty tests -- they fold when the heading is written to the .toc,
+    % baking the right colour per song.  Favourite, or standalone (\ifMyLSbookheading
+    % false): no \color emitted -> plain black.
+    \ifMyLSbookheading\ifMyLSfavorite\else\color{\MyLSnonfavoritecolor}\fi\fi
+    \songproperty{title}\space\mdseries
     \ifsongproperty{band}{(\songproperty{band})}{}\normalsize\quad%
     \ifsongproperty{key}{\space\songproperty{key}}{}%
     \ifsongproperty{istransposed}{\nobreakspace\MyLStransposed{\songproperty{istransposed}}}{}%
@@ -1503,6 +1531,47 @@
 }
 \makeatother
 
+% --- favourite detection (drives \ifMyLSfavorite, read by the title template) ----
+% \bookinclude must know, before it pulls a song in, whether that song is tagged a
+% `favorite' -- but the tag lives in a `%! covers:' magic COMMENT, invisible to TeX
+% under normal catcodes.  So scan the file's leading lines here with % made `other'
+% (catcode 12), which keeps the comment text instead of letting \read discard it.
+% Only the top block needs scanning (the magic comments sit above \documentclass), so
+% a small line budget bounds the read; we look for the `covers:' tag line and, on it,
+% for `favorite' -- the two-step test avoids a false positive from, say, a "My
+% Favorite Things" title that might fall within the budget.  Kernel \in@/\ifin@ do
+% the substring test (catcodes line up: letters stay 11, only % changed).  The flag is
+% set GLOBALLY and re-cleared at the top of every \bookinclude, so each song gets its
+% own value with no leak (a standalone sheet never calls this -> the flag stays false).
+\newread\MyLSfavin
+\newcount\MyLSfavbudget
+\makeatletter % \in@/\ifin@ contain @, but \makeatother ran earlier in this file
+\newcommand\MyLScheckcoversline[1]{%
+  \in@{covers:}{#1}%
+  \ifin@ \in@{favorite}{#1}\ifin@\global\MyLSfavoritetrue\fi\fi
+}
+\makeatother
+\newcommand\MyLSdetectfavorite[1]{%
+  \global\MyLSbookheadingtrue % only \bookinclude calls this -> "we are in a book"
+  \global\MyLSfavoritefalse
+  \openin\MyLSfavin=#1\relax
+  \ifeof\MyLSfavin\else
+    \begingroup
+      \endlinechar=-1 \catcode`\%=12\relax
+      \MyLSfavbudget=5\relax
+      \loop
+        \ifeof\MyLSfavin\else
+          \read\MyLSfavin to \MyLSfavline
+          \expandafter\MyLScheckcoversline\expandafter{\MyLSfavline}%
+        \fi
+        \advance\MyLSfavbudget-1\relax
+        \ifnum\MyLSfavbudget>0
+      \repeat
+    \endgroup
+  \fi
+  \closein\MyLSfavin
+}
+
 % Songbook include wrapper, replacing the bare \clearoddpage\includeleadsheet:
 % start this song on an odd page (padding the previous song / the TOC), pull it
 % in, then drop the fit-tested back-to-contents link on its last page.  A song
@@ -1514,6 +1583,7 @@
 % group does not lose them.
 \newcommand\bookinclude[1]{%
   \clearoddpage
+  \MyLSdetectfavorite{#1}%
   \begingroup
     \MyLSaddsongdir{#1}%
     \includeleadsheet{#1}%
