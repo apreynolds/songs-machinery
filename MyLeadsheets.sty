@@ -1480,12 +1480,25 @@
 % and prepend it to \input@path, so the nested \input also searches that folder.
 % (@ is not a catcode letter in this package -- see line ~52 -- so wrap in
 % \makeatletter, as elsewhere.)
+%
+% The SAME directory problem hits \includegraphics in a booked song (e.g. Africa's
+% \includegraphics{Africa-riff.jpg}): graphics searches its OWN path \Ginput@path,
+% not \input@path, so the \input@path tweak alone leaves the image unfound -> a
+% draft placeholder box and an errored build.  graphics.sty seeds \Ginput@path with
+% a load-time \let-snapshot of \input@path (graphics.sty l.157-158), so our later
+% \input@path change does not propagate; we must prepend the song dir to
+% \Ginput@path too -- exactly what \graphicspath does, but additively.  Because that
+% \let leaves \Ginput@path *defined* (meaning: undefined-cs) rather than absent, the
+% \@ifundefined{input@path} idiom is not reusable here; \ifx ...\@undefined is the
+% reliable test (an empty \graphicspath{} also leaves it \ifx-empty, handled too).
 \makeatletter
 \newcommand\MyLSaddsongdir[1]{%
   \filename@parse{#1}%
   \ifx\filename@area\@empty\else
     \@ifundefined{input@path}{\def\input@path{}}{}%
     \edef\input@path{{\filename@area}\input@path}%
+    \ifx\Ginput@path\@undefined \def\Ginput@path{}\fi
+    \edef\Ginput@path{{\filename@area}\Ginput@path}%
   \fi
 }
 \makeatother
