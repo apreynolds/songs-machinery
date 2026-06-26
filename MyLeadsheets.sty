@@ -1201,6 +1201,13 @@
 % (default grey `MyLSnonfavoritegray', gray 0.5 -- not so light it is hard to read,
 % dark enough that black favourites pop; \renewcommand to retune).  Under the
 % grayscale views' monochrome xcolor it degrades like every other colour.
+%   OPT-IN per book.  The whole mechanism is gated by \ifMyLSfavoriteemphasis
+% (default false): \bookinclude only runs \MyLSdetectfavorite when it is true, so
+% \ifMyLSbookheading stays false and headings stay plain black in any book that has
+% not opted in.  A songbook that wants the emphasis sets \MyLSfavoriteemphasistrue in
+% its preamble (covers/xmas); project books (rem, stevie, originals) leave it alone
+% and additionally skip the per-song file scan entirely -- they pay nothing for it.
+\newif\ifMyLSfavoriteemphasis
 \newif\ifMyLSfavorite
 \newif\ifMyLSbookheading
 \definecolor{MyLSnonfavoritegray}{gray}{0.5}
@@ -1583,7 +1590,7 @@
 % group does not lose them.
 \newcommand\bookinclude[1]{%
   \clearoddpage
-  \MyLSdetectfavorite{#1}%
+  \ifMyLSfavoriteemphasis\MyLSdetectfavorite{#1}\fi % opt-in; off -> headings stay black
   \begingroup
     \MyLSaddsongdir{#1}%
     \includeleadsheet{#1}%

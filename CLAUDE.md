@@ -359,18 +359,23 @@ padding" + "Songbook back to contents link" sections); internals in NOTES.md.
     magic comment sits in the leading block before `\documentclass`, alongside any
     `%! views:` line (build-pdfs ignores it; it only reads `%! views:`).
   - **Favourite emphasis in a songbook (inverted — favourites are the black ones).**
-    In a songbook, a song tagged `favorite` in its `%! covers:` line keeps its normal
+    **Opt-in per book** — set `\MyLSfavoriteemphasistrue` in the songbook preamble
+    (the covers and xmas books do; project books — rem, stevie, originals — leave it
+    off, default `false`, so every heading stays black). When **on** in a songbook, a
+    song tagged `favorite` in its `%! covers:` line keeps its normal
     **black** heading; **every other** song's heading is muted to **grey** — so the
     favourites stand out as the dark entries. The grey is the heading's *base* colour,
     so it covers all normally-black heading text (title, band, genre) while the
     independently coloured bits (red key, blue arrangement tag, the difficulty glyph)
     keep their own colour. Both the on-page heading and the reused TOC entry follow
     (one `\section` arg feeds both). Mechanism: `\bookinclude` calls
-    `\MyLSdetectfavorite{file}`, which scans the file's leading lines with `%` made
+    `\MyLSdetectfavorite{file}` **only when `\ifMyLSfavoriteemphasis` is set**, which
+    scans the file's leading lines with `%` made
     catcode-12 (so the comment isn't discarded by `\read`), looks for `favorite` on a
     `covers:` line, and sets the global `\ifMyLSfavorite`; it also sets
     `\ifMyLSbookheading` (detection only runs from `\bookinclude`, so this gates the
-    muting to a book). The title template emits `\color{\MyLSnonfavoritecolor}` only
+    muting to a book — and a non-opted-in book skips the per-song scan entirely). The
+    title template emits `\color{\MyLSnonfavoritecolor}` only
     when in a book **and** not a favourite. Both `\if` tests are expandable like the
     `\ifsongproperty` tests, so they fold at `.toc`-write time using *that* song's
     value (`\ifMyLSfavorite` re-cleared per `\bookinclude`, so no leak). Reuses the
